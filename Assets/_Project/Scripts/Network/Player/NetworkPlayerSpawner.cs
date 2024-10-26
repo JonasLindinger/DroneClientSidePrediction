@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using LindoNoxStudio.Network.Connection;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -8,6 +9,8 @@ namespace LindoNoxStudio.Network.Player
     {
         [Header("Prefabs")]
         [SerializeField] private NetworkPlayer _playerPrefab;
+        [Space(10)]
+        [SerializeField] private List<Transform> _spawnPoints;
         
         #if Server
         public static NetworkPlayerSpawner Instance { get; private set; }
@@ -34,8 +37,10 @@ namespace LindoNoxStudio.Network.Player
         
         public void Spawn(ulong clientId)
         {
+            Transform spawnPoint = _spawnPoints[(int) (clientId - 1)];
+            
             // Instantiate the player object on the server
-            NetworkPlayer player = Instantiate(_playerPrefab, Vector3.zero, Quaternion.identity);
+            NetworkPlayer player = Instantiate(_playerPrefab, spawnPoint.position, spawnPoint.rotation);
 
             // Spawn the object on every client
             player.NetworkObject.SpawnWithOwnership(clientId);

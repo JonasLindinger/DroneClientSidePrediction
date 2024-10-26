@@ -75,7 +75,6 @@ namespace LindoNoxStudio.Network.Player
             }
             
             snapshot.Rotation = rotation;
-            Debug.Log("Worked: " + (snapshot.Rotation == rotation ? "yes" : "no"));
         }
         
         public PlayerState GetSnapshot(uint tick)

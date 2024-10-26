@@ -7,7 +7,7 @@ namespace LindoNoxStudio.Network.Game
 {
     public static class GameManager
     {
-        public static GameState GameState { get; private set; } = GameState.WaitingForPlayers;
+        public static GameStatus GameStatus { get; private set; } = GameStatus.WaitingForPlayers;
 
         #if Server
         public static async Task StartGame()

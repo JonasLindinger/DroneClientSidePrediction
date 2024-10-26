@@ -1,6 +1,6 @@
 namespace LindoNoxStudio.Network.Game
 {
-    public enum GameState
+    public enum GameStatus
     {
         WaitingForPlayers,
         Starting,
