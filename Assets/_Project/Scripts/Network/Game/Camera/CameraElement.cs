@@ -15,11 +15,17 @@ namespace LindoNoxStudio.Network.Game.Camera
             RemoveRegistration();
         }
 
+        /// <summary>
+        /// Adding this camera element to list
+        /// </summary>
         private void Register()
         {
             CameraManager.Instance.AddCameraElement(this, IsOwner);
         }
         
+        /// <summary>
+        /// Removing this camera element from list
+        /// </summary>
         private void RemoveRegistration()
         {
             CameraManager.Instance.RemoveCameraElement(this);
