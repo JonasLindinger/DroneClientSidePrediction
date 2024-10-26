@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using LindoNoxStudio.Network.Input;
 using LindoNoxStudio.Network.Simulation;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace LindoNoxStudio.Network.Connection
 {
@@ -13,33 +10,36 @@ namespace LindoNoxStudio.Network.Connection
     public class NetworkClient : NetworkBehaviour
     {
         #if Client
+        // LocalClient Singleton for reference
         public static NetworkClient LocalClient { get; private set; }
-        
         #elif Server
-        public static List<NetworkClient> Clients = new List<NetworkClient>();
-        private Client _networkClient;
+        // Client list for reference
+        private static List<NetworkClient> Clients = new List<NetworkClient>();
+        
+        // The Client of this Object
+        private Client _clientInfo;
         #endif
         
+        // References
         [HideInInspector] public TickSyncronisation _tickSyncronisation;
         [HideInInspector] public ClientInput _input;
         
         public override void OnNetworkSpawn()
         {
             #if Client
-            
+            // Setting Instance
             LocalClient = this;
-            Debug.Log("Local client spawned");
-            
             #elif Server
-            
+            // Adding this to list
             Clients.Add(this);
-            Debug.Log("Client spawned");
             
-            _networkClient = Client.GetClientByClientId(OwnerClientId);
-            _networkClient.NetworkClient = this;
+            // Referencing this on the clientInfo
+            _clientInfo = Client.GetClientByClientId(OwnerClientId);
+            _clientInfo.NetworkClient = this;
             
             #endif
             
+            // Referencing
             _tickSyncronisation = GetComponent<TickSyncronisation>();
             _input = GetComponent<ClientInput>();
         }
@@ -47,15 +47,11 @@ namespace LindoNoxStudio.Network.Connection
         public override void OnNetworkDespawn()
         {
             #if Client
-            
+            // Setting Instance to null
             LocalClient = null;
-            Debug.Log("Local despawned");
-            
             #elif Server
-            
+            // Removing this from client list
             Clients.Remove(this);
-            Debug.Log("Client despawned");
-            
             #endif
         } 
     }

@@ -2,8 +2,17 @@ using System.IO;
 
 namespace LindoNoxStudio.Network.Connection
 {
+    /// <summary>
+    /// Encodes and Decodes between Uuid | Username and byte array
+    /// </summary>
     public static class ConnectionPayload
     {
+        /// <summary>
+        /// Encodes uuid and displayName to byte array
+        /// </summary>
+        /// <param name="uuid">Uuid | SteamId</param>
+        /// <param name="displayName">DisplayName | SteamUserName</param>
+        /// <returns></returns>
         public static byte[] Encode(ulong uuid, string displayName)
         {
             using (MemoryStream memoryStream = new MemoryStream())
@@ -22,6 +31,11 @@ namespace LindoNoxStudio.Network.Connection
             }
         }
         
+        /// <summary>
+        /// Decodes byte array payload to uuid and displayName
+        /// </summary>
+        /// <param name="payload">Connection payload</param>
+        /// <returns></returns>
         public static (ulong uuid, string displayName) Decode(byte[] payload)
         {
             using (MemoryStream memoryStream = new MemoryStream(payload))

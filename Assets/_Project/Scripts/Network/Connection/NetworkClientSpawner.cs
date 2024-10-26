@@ -1,5 +1,3 @@
-using System;
-using LindoNoxStudio.Scenes;
 using UnityEngine;
 
 namespace LindoNoxStudio.Network.Connection
@@ -10,10 +8,12 @@ namespace LindoNoxStudio.Network.Connection
         [SerializeField] private NetworkClient _clientPrefab;
         
         #if Server
+        // Instance for Singleton reference
         public static NetworkClientSpawner Instance { get; private set; }
         
         private void Start()
         {
+            // Setting instance
             if (Instance != null)
             {
                 Debug.LogError("Duplicate found");
@@ -26,6 +26,7 @@ namespace LindoNoxStudio.Network.Connection
         
         private void OnDestroy()
         {
+            // Setting Instance to null, if we are the Instance
             if (!Instance) return;
             if (Instance != this) return;
             
@@ -38,6 +39,7 @@ namespace LindoNoxStudio.Network.Connection
             NetworkClient client = Instantiate(_clientPrefab);
 
             // Spawn the object on the specific client
+            client.NetworkObject.DontDestroyWithOwner = true;
             client.NetworkObject.SpawnWithObservers = false;
             client.NetworkObject.SpawnWithOwnership(clientId);
             client.NetworkObject.NetworkShow(clientId);

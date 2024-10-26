@@ -6,16 +6,22 @@ namespace LindoNoxStudio.Network.Connection
 {
     public class Client
     {
+        // List of all Clients
         public static List<Client> Clients = new List<Client>();
         
+        // Unique name => Name(Uuid)
         public string UniqueName => DisplayName + "(" + Uuid + ")";
         
+        // Unique player id to identify the player
         public ulong Uuid;
+        // Network Client id to identify him from the network
         public ulong ClientId;
-        
+        // Client name to display to other players
         public string DisplayName;
+        // Indicating flag to check if the player is online
         public bool IsOnline;
         
+        // References to the Client object and the player object
         public NetworkClient NetworkClient;
         public NetworkPlayer NetworkPlayer;
 
@@ -29,43 +35,52 @@ namespace LindoNoxStudio.Network.Connection
             return Clients.Find(c => c.ClientId == clientId);
         }
 
+        /// <summary>
+        /// Adds the client to the list
+        /// </summary>
         public void Add()
         {
             Clients.Add(this);
         }
         
+        /// <summary>
+        /// Removes the client from the list
+        /// </summary>
         public void Remove()
         {
             Clients.Remove(this);
         }
         
+        /// <summary>
+        /// Marking the player as joined (online)
+        /// </summary>
         public void Joined()
         {
             IsOnline = true;
         }
 
+        /// <summary>
+        /// Marking the player as left (offline)
+        /// </summary>
         public void Left()
         {
             IsOnline = false;
         }
         
+        /// <summary>
+        /// Setting the new clientId and transferring ownership
+        /// </summary>
+        /// <param name="clientId"></param>
         public void Reconnected(ulong clientId)
         {
+            // Changing the network client id
             ClientId = clientId;
+            
+            // Transfer ownership to the new client id
             NetworkClient.NetworkObject.ChangeOwnership(clientId);
             NetworkPlayer.NetworkObject.ChangeOwnership(clientId);
             
-            Debug.Log("Reconnectiong worked: " + (GetClientByUuid(Uuid).ClientId == clientId));
-        }
-
-        public void Reference(NetworkClient networkClient)
-        {
-            NetworkClient = networkClient;
-        }
-
-        public void Reference(NetworkPlayer networkPlayer)
-        {
-            NetworkPlayer = networkPlayer;
+            Debug.Log("Reconnection worked: " + (GetClientByUuid(Uuid).ClientId == clientId));
         }
     }
 }
