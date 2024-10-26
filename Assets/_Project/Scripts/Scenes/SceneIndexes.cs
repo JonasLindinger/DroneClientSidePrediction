@@ -1,6 +1,9 @@
 namespace LindoNoxStudio.Scenes
 {
-    public enum SceneIndexes : byte
+    /// <summary>
+    /// Contains every scene with the corresponding index
+    /// </summary>
+    public enum SceneIndexes : int
     {
         Init = 0,
         NetworkLayer = 1,
