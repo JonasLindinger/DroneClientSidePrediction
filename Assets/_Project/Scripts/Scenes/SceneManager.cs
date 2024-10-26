@@ -16,6 +16,7 @@ namespace LindoNoxStudio.Scenes
         private Queue<SceneOperation> _sceneQueue = new Queue<SceneOperation>();
 
         private bool _isOperating;
+        private int _currentActiveSceneIndex;
         
         private void Start()
         {
@@ -30,35 +31,30 @@ namespace LindoNoxStudio.Scenes
             DontDestroyOnLoad(gameObject);
         }
         
-        public void LoadScene(int sceneIndex, int activeScene, bool onlyAddToQueue = false)
+        public void AddSceneOperationToQueue(SceneOperationType operationType, int sceneIndex, int activeScene = -1)
         {
             SceneOperation operation = new SceneOperation
             {
-                ID = Random.Range(0, 1000),
+                ID = Random.Range(0, 2100000000),
                 SceneIndex = sceneIndex,
                 ActiveSceneIndex = activeScene,
-                IsLoadingOperation = true
+                OperationType = operationType
             };
             
             _sceneQueue.Enqueue(operation);
+        }
+        
+        public void LoadScene(int sceneIndex, int activeScene = -1)
+        {
+            AddSceneOperationToQueue(SceneOperationType.Loading, sceneIndex, activeScene);
             
-            if (onlyAddToQueue) return;
             RunSceneOperations();
         }
         
-        public void UnLoadScene(int sceneIndex, int activeScene, bool onlyAddToQueue = false)
+        public void UnLoadScene(int sceneIndex, int activeScene = -1)
         {
-            SceneOperation operation = new SceneOperation
-            {
-                ID = Random.Range(0, 1000),
-                SceneIndex = sceneIndex,
-                ActiveSceneIndex = activeScene,
-                IsLoadingOperation = false
-            };
+            AddSceneOperationToQueue(SceneOperationType.Unloading, sceneIndex, activeScene);
             
-            _sceneQueue.Enqueue(operation);
-            
-            if (onlyAddToQueue) return;
             RunSceneOperations();
         }
 
@@ -73,21 +69,22 @@ namespace LindoNoxStudio.Scenes
             _loadingScreen.SetActive(true);
 
             SceneOperation operationData = _sceneQueue.Dequeue();
-            AsyncOperation loadingOperation;
+            AsyncOperation loadingOperation = new AsyncOperation();
             
             // Creating operation and starting it.
-            if (operationData.IsLoadingOperation)
+            switch (operationData.OperationType)
             {
-                loadingOperation = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(
-                    operationData.SceneIndex,
-                    LoadSceneMode.Additive
-                );
-            }
-            else
-            {
-                loadingOperation = UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(
-                    operationData.SceneIndex
-                );
+                case SceneOperationType.Loading:
+                    loadingOperation = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(
+                        operationData.SceneIndex,
+                        LoadSceneMode.Additive
+                    );
+                    break;
+                case SceneOperationType.Unloading:
+                    loadingOperation = UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(
+                        operationData.SceneIndex
+                    );
+                    break;
             }
             
             // Waiting until the operation is Done.
@@ -95,9 +92,17 @@ namespace LindoNoxStudio.Scenes
                 await Task.Delay(1);
             
             // Setting the correct active scene.
-            UnityEngine.SceneManagement.SceneManager.SetActiveScene(
-                UnityEngine.SceneManagement.SceneManager.GetSceneByBuildIndex(operationData.ActiveSceneIndex)
+            try
+            {
+                UnityEngine.SceneManagement.SceneManager.SetActiveScene(
+                    UnityEngine.SceneManagement.SceneManager.GetSceneByBuildIndex(operationData.ActiveSceneIndex)
                 );
+            }
+            catch (System.Exception e)
+            {
+                // We can't set the active scene, because the active scene isn't loaded!
+                Debug.LogWarning(e);
+            }
             
             // Setting flag and loading screen deactive.
             _isOperating = false;

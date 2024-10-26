@@ -59,7 +59,7 @@ namespace LindoNoxStudio.Network.Connection
             if (Client.GetClientByUuid(newClient.Uuid) == null)
             {
                 // New player
-                if (GameManager.GameState == GameState.WaitingForPlayers)
+                if (GameManager.GameStatus == GameStatus.WaitingForPlayers)
                 {
                     // Game hasn't started yet
                     response.Approved = true;
@@ -112,7 +112,7 @@ namespace LindoNoxStudio.Network.Connection
 
         public static void OnClientLeft(Client leftClient)
         {
-            if (GameManager.GameState == GameState.WaitingForPlayers)
+            if (GameManager.GameStatus == GameStatus.WaitingForPlayers)
             {
                 leftClient.Remove();
                 CurrentPlayerCount--;

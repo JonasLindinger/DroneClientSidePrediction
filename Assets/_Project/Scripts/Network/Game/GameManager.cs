@@ -12,11 +12,11 @@ namespace LindoNoxStudio.Network.Game
         #if Server
         public static async Task StartGame()
         {
-            GameState = GameState.Starting;
+            GameStatus = GameStatus.Starting;
 
             await Task.Delay(3000);
             
-            GameState = GameState.Started;
+            GameStatus = GameStatus.Started;
             
             SpawnPlayers();
             

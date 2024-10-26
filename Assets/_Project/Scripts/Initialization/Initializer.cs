@@ -7,17 +7,13 @@ namespace LindoNoxStudio.Initialization
     {
         private void Start()
         {
-            #if Client
+            // Adding NetworkLayer to the Scene loading queue
+            SceneManager.Instance.AddSceneOperationToQueue(SceneOperationType.Loading, (int)SceneIndexes.NetworkLayer, (int)SceneIndexes.NetworkLayer);
+            // Adding Game to the Scene loading queue
+            SceneManager.Instance.AddSceneOperationToQueue(SceneOperationType.Loading, (int)SceneIndexes.Game);
             
-            SceneManager.Instance.LoadScene((int)SceneIndexes.NetworkLayer, (int)SceneIndexes.NetworkLayer, false);
-            SceneManager.Instance.LoadScene((int)SceneIndexes.Game, (int)SceneIndexes.NetworkLayer);
-            
-            #elif Server
-            
-            SceneManager.Instance.LoadScene((int)SceneIndexes.NetworkLayer, (int)SceneIndexes.NetworkLayer, false);
-            SceneManager.Instance.LoadScene((int)SceneIndexes.Game, (int)SceneIndexes.NetworkLayer);
-            
-            #endif
+            // Loading scene operations
+            SceneManager.Instance.RunSceneOperations();
         }
     }
 }
