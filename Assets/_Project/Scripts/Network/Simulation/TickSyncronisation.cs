@@ -5,18 +5,25 @@ namespace LindoNoxStudio.Network.Simulation
 {
     public class TickSyncronisation : NetworkBehaviour
     {
+        // Todo: Make this a setting in the game settings
         [SerializeField] private WantedBufferSize _wantedBufferSize = WantedBufferSize.Balanced;
         
         #if Client
+        // When the Client connects to the Server and we get the Server Tick, we add this ammount ontop of the tick, to get ahead of the Server
         public const int StartingTickOffset = 5;
         #endif
         
         #if Server
         public override void OnNetworkSpawn()
         {
+            // We send the Current Tick to the Client, so that the Client can start the Tick System
             OnServerTickRPC(SimulationManager.CurrentTick);
         }
         
+        /// <summary>
+        /// We send the Buffer Size to the Client as a short (int => short)
+        /// </summary>
+        /// <param name="bufferSize"></param>
         public void SendBufferSize(int bufferSize)
         {
             short shortBufferSize = short.Parse(bufferSize.ToString());
@@ -25,6 +32,11 @@ namespace LindoNoxStudio.Network.Simulation
         
         #endif
 
+        /// <summary>
+        /// Remote procedural call.
+        /// Server sends the Server Tick to the CLient, when the Client just connected
+        /// </summary>
+        /// <param name="serverTick"></param>
         [Rpc(SendTo.Owner, Delivery = RpcDelivery.Reliable)]
         private void OnServerTickRPC(uint serverTick)
         {
@@ -33,6 +45,12 @@ namespace LindoNoxStudio.Network.Simulation
             #endif
         }
 
+        /// <summary>
+        /// Remote procedural call.
+        /// The Server sends the Clients Buffer Size to the Client and he checks if he want's to adjust.
+        /// And when he should adjust, he clamps the value and sends it to the SimulationManager
+        /// </summary>
+        /// <param name="bufferSize">Server Buffer Size</param>
         [Rpc(SendTo.Owner, Delivery = RpcDelivery.Reliable)]
         private void OnBufferSizeRPC(short bufferSize)
         {

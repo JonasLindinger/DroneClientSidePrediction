@@ -25,11 +25,6 @@ namespace LindoNoxStudio.Network.Connection
             #endif
         }
 
-        private void Update()
-        {
-            SimulationManager.Update(Time.deltaTime);
-        }
-
         /// <summary>
         /// Getting the Unity Transport of the NetworkManager and setting the ip and port to the connection data
         /// </summary>
