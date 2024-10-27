@@ -2,13 +2,13 @@ using LindoNoxStudio.Network.Input;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace LindoNoxStudio.Network.Player
 {
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerController : NetworkBehaviour
     {
+        // Values we change in unity
         [Header("Settings")] 
         [SerializeField] private float speed = 8f;
         [SerializeField] private float sensitivity = 4f;
@@ -17,8 +17,8 @@ namespace LindoNoxStudio.Network.Player
         [SerializeField] private float minMaxPitch = 30f;
         [SerializeField] private float minMaxRoll = 30f;
         [SerializeField] private float lerpSpeed = 2f;
-
-        // Values
+        
+        // Values we change in code
         [HideInInspector] public float finalPitch;
         [HideInInspector] public float finalRoll;
         [HideInInspector] public float yaw;
@@ -36,36 +36,36 @@ namespace LindoNoxStudio.Network.Player
             // Cursor
             if (IsLocalPlayer)
             {
+                // Setting Cursor visibility and lockState
                 Cursor.visible = false;
                 Cursor.lockState = CursorLockMode.Locked;
                 
+                // Referencing
                 CinemachineCamera vcam = Camera.main.GetComponent<CinemachineCamera>();
             }
             #endif
         }
         
+        /// <summary>
+        /// Moves and Rotates the player based on the input
+        /// </summary>
+        /// <param name="input">Input we use for the movement and rotation</param>
         public void OnInput(ClientInputState input)
         {
             if (input == null) return;
 
-            // Set yaw for precise Predictions
-            ApplyYaw(input.PlayerRotation);
+            // Todo: Apply Rotation of Input
             
             // Applying Force
             _rb.AddForce(GetEngineForce(input), ForceMode.Force);
             
-            #if Client
-            // Changing Yaw for next state
-            DoYawRotation(input);
-            #endif
-            #if Server
-            Rotate(input);
-            #endif  
+            // Todo: Do Rotation
         }
         
         /// <summary>
         /// Returns the engine Force
         /// </summary>
+        /// <param name="input">Input we use for the engine force</param>
         /// <returns></returns>
         private Vector3 GetEngineForce(ClientInputState input)
         {
@@ -77,72 +77,31 @@ namespace LindoNoxStudio.Network.Player
 
             return engineForce;
         }
-
-        private void ApplyYaw(float rotation)
-        {
-            yaw = rotation;
-            Quaternion parentRotation = Quaternion.Euler(transform.localRotation.x, yaw, transform.localRotation.z);
-            transform.localRotation = parentRotation;
-        }
-
-        #if Client
-        private void DoYawRotation(ClientInputState input)
-        {
-            yaw += input.Pedals * sensitivity;
-        }
-
-        public void ApplyVisualRotation(float pitch, float roll)
-        {
-            // Calculate Rotation
-            Quaternion visualRotation = Quaternion.Euler(finalPitch, 0, finalRoll); // Calculating drone rotation
-            
-            // Apply Rotation
-            transform.GetChild(0).localRotation = visualRotation; // Rotating Drone
-        }
-        #elif Server
-        private void Rotate(ClientInputState input)
-        {
-            // Modify values
-            float pitch = input.GetCycle().y * minMaxPitch;
-            float roll = -input.GetCycle().x * minMaxRoll;
-                
-            // Smoothing out values
-            finalPitch = Mathf.Lerp(finalPitch, pitch, Time.deltaTime * lerpSpeed);
-            finalRoll = Mathf.Lerp(finalRoll, roll, Time.deltaTime * lerpSpeed);
-
-            // Calculating drone rotation of the visual part
-            Quaternion visualRotation = Quaternion.Euler(finalPitch, 0, finalRoll); 
-
-            // Apply Rotation of the visual part
-            transform.GetChild(0).localRotation = visualRotation; // Rotating Drone
-        }
-        #endif
+        
 
         #region State
-
+        
+        // Todo: Move this code in another script
+        /// <summary>
+        /// Returns the current state of the Player
+        /// </summary>
+        /// <param name="tick"></param>
+        /// <returns></returns>
         public PlayerState GetState(uint tick)
         {
             PlayerState state = new PlayerState();
-            state.SetUp(tick, transform.position, new Vector3(finalPitch, finalRoll, yaw), _rb.linearVelocity);
+            state.SetUp(tick, transform.position, _rb.linearVelocity);
             
             return state;
         }
 
+        // Todo: Move this code in another script
         public void ApplyState(PlayerState state, uint tick = 0)
         {
             transform.position = state.Position;
-            finalPitch = state.Rotation.x;
-            finalRoll = state.Rotation.y;
-            yaw = state.Rotation.z;
-            
-            // Calculate Rotation
-            Quaternion visualRotation = Quaternion.Euler(finalPitch, 0, finalRoll); // Calculating drone rotation
-            
-            // Apply Rotation
-            transform.GetChild(0).localRotation = visualRotation; // Rotating Drone
-            ApplyYaw(yaw);
-
             _rb.linearVelocity = state.Velocity;
+            
+            // Todo: Do Rotation
         }
 
         #endregion

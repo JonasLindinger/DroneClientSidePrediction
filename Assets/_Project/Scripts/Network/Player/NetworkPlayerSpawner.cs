@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using LindoNoxStudio.Network.Connection;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace LindoNoxStudio.Network.Player
 {
@@ -13,10 +11,12 @@ namespace LindoNoxStudio.Network.Player
         [SerializeField] private List<Transform> _spawnPoints;
         
         #if Server
+        // Instance for Singleton reference
         public static NetworkPlayerSpawner Instance { get; private set; }
         
         private void Start()
         {
+            // Singleton referencing
             if (Instance != null)
             {
                 Debug.LogError("Duplicate found");
@@ -29,14 +29,20 @@ namespace LindoNoxStudio.Network.Player
         
         private void OnDestroy()
         {
+            // Removing Singleton reference
             if (!Instance) return;
             if (Instance != this) return;
             
             Instance = null;
         }
         
+        /// <summary>
+        /// Instantiates a Netzwork Player Prefab for a client with his ownership
+        /// </summary>
+        /// <param name="clientId">The Client Id of the Player</param>
         public void Spawn(ulong clientId)
         {
+            // Choosing spawnpoint
             Transform spawnPoint = _spawnPoints[(int) (clientId - 1)];
             
             // Instantiate the player object on the server

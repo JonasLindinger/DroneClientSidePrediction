@@ -6,7 +6,6 @@ namespace LindoNoxStudio.Network.Input
     public class ClientInputState : INetworkSerializable
     {
         public uint Tick;
-        public float PlayerRotation;
         private byte _essentialKeys;
 
         #if Client
@@ -19,10 +18,9 @@ namespace LindoNoxStudio.Network.Input
             (_essentialKeys & (1 << 5)) != 0 ? -1 : 0;
 
         #if Client
-        public void SetUp(uint tick, Vector2 moveInput, float pedals, float throttle, float playerRotation)
+        public void SetUp(uint tick, Vector2 moveInput, float pedals, float throttle)
         {
             Tick = tick;
-            PlayerRotation = playerRotation;
             Pedals = pedals;
 
             // Reset the essentialKeys to 0 before setting new values
@@ -39,10 +37,9 @@ namespace LindoNoxStudio.Network.Input
             if (throttle < 0) _essentialKeys |= 1 << 5; // Throttle backward
         }
         #elif Server
-        public void SetUp(uint tick, Vector2 moveInput, float throttle, float playerRotation)
+        public void SetUp(uint tick, Vector2 moveInput, float throttle)
         {
             Tick = tick;
-            PlayerRotation = playerRotation;
 
             // Reset the essentialKeys to 0 before setting new values
             _essentialKeys = 0;
@@ -73,7 +70,6 @@ namespace LindoNoxStudio.Network.Input
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref Tick);
-            serializer.SerializeValue(ref PlayerRotation);
             serializer.SerializeValue(ref _essentialKeys);
         }
     }

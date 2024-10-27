@@ -105,11 +105,11 @@ namespace LindoNoxStudio.Network.Input
             try
             {
                 PlayerController playerController = NetworkPlayer.LocalNetworkPlayer._playerController;
-                clientInputState.SetUp(tick, cycle, pedals, throttle, playerController.yaw);
+                clientInputState.SetUp(tick, cycle, pedals, throttle);
             }
             catch (NullReferenceException e)
             {
-                clientInputState.SetUp(tick, cycle, pedals, throttle, 0);
+                clientInputState.SetUp(tick, cycle, pedals, throttle);
             }
 
             return clientInputState;
@@ -172,7 +172,7 @@ namespace LindoNoxStudio.Network.Input
             else if (clientInputState == null)
             {
                 clientInputState = new ClientInputState();
-                clientInputState.SetUp(tick, Vector2.zero, 0, 0);
+                clientInputState.SetUp(tick, Vector2.zero, 0);
                 _clientInputStates[tick % InputBufferSize] = clientInputState;
             }
 
