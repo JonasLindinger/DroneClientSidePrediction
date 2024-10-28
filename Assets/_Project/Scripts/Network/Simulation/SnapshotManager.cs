@@ -76,7 +76,6 @@ namespace LindoNoxStudio.Network.Simulation
                     break;
                 case StateType.Player:
                     var playerData = GetPlayerStates(tick, networkId, state);
-                    Debug.Log("IsValid: " + playerData.isValid);
                     // Break if the data isn't valid
                     if (!playerData.isValid)
                     {
@@ -142,7 +141,7 @@ namespace LindoNoxStudio.Network.Simulation
         private static bool CheckForReconciliation(PlayerState playerState, PlayerState predictedPlayerState)
         {
             // Check for Position error
-            if (Vector3.Distance(playerState.Position, predictedPlayerState.Position) < 0.001f)
+            if (Vector3.Distance(playerState.Position, predictedPlayerState.Position) > 0.001f)
                 return true;
             else return false;
         }
@@ -201,7 +200,7 @@ namespace LindoNoxStudio.Network.Simulation
         private static bool CheckForReconciliation(BallState ballState, BallState predictedBallState)
         {
             // Check for Position error
-            if (Vector3.Distance(ballState.Position, predictedBallState.Position) < 0.001f)
+            if (Vector3.Distance(ballState.Position, predictedBallState.Position) > 0.001f)
                 return true;
             else return false;
         }
@@ -222,7 +221,7 @@ namespace LindoNoxStudio.Network.Simulation
         /// </summary>
         /// <param name="networkId">Object'S NetworkId</param>
         /// <param name="state"></param>
-        public static void ApplyState(uint tick, ulong networkId, IState state)
+        public static void ApplyState(uint tick, ulong networkId, IState state, bool isLocalPlayer = false)
         {
             NetworkedObject networkedObject = _networkedObjects[networkId];
 
@@ -232,19 +231,17 @@ namespace LindoNoxStudio.Network.Simulation
                 Debug.LogWarning("Something went wrong!");
                 return;
             }
-
-            networkedObject.ApplyState(state);
-            CheckForReconciliation(tick, networkId, state);
-            return;
             
+            // Applying state
             if (CheckForReconciliation(tick, networkId, state))
             {
+                if (isLocalPlayer)
+                    Debug.LogWarning($"Prediction of local player wasn't correct");
+
                 networkedObject.ApplyState(state);
             }
-            else
-            {
+            else if (!isLocalPlayer)
                 networkedObject.ApplyNecessaryThings(state);
-            }
         }
 
         #endif

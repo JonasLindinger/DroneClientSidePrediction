@@ -6,6 +6,9 @@ namespace LindoNoxStudio.Network.Simulation
 {
     public class SimulationManager : MonoBehaviour
     {
+        // Instance for Singleton reference
+        public static SimulationManager Instance { get; private set; }
+        
         // General settings. !Server and CLient have to have the same values!
         public const int PhysicsTickRate = 60;
         #if Server
@@ -23,6 +26,28 @@ namespace LindoNoxStudio.Network.Simulation
         #if Server
         public static TickSystem AdjustmentTickSystem { get; private set; }
         #endif
+        
+        private void Start()
+        {
+            // Setting instance
+            if (Instance != null)
+            {
+                Debug.LogError("Duplicate found");
+                Destroy(gameObject);
+                return;
+            }
+            
+            Instance = this;
+        }
+        
+        private void OnDestroy()
+        {
+            // Setting Instance to null, if we are the Instance
+            if (!Instance) return;
+            if (Instance != this) return;
+            
+            Instance = null;
+        }
 
         /// <summary>
         /// Starts the tick system and sets the simulationMode to Script.
@@ -76,14 +101,18 @@ namespace LindoNoxStudio.Network.Simulation
             //
             // 1. Handle Input
             //
-            if (NetworkClient.LocalClient == null) return;
-            if (NetworkClient.LocalClient._input == null) return;
             
             // Todo: Do this in a seperate Tick System, so that it is possible to keep the RPC send rate down by still having 120 Physics Tick Rate
-            // Save ande send inputs
-            NetworkClient.LocalClient._input.SaveInput(tick);
-            NetworkClient.LocalClient._input.SendInputs();
-                
+            if (NetworkClient.LocalClient != null)
+            {
+                if (NetworkClient.LocalClient._input != null)
+                {
+                    // Save ande send inputs
+                    NetworkClient.LocalClient._input.SaveInput(tick);
+                    NetworkClient.LocalClient._input.SendInputs();  
+                }
+            }
+            
             // Predicting local player state and sending input to server
             if (NetworkPlayer.LocalNetworkPlayer)
                 NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
@@ -121,6 +150,32 @@ namespace LindoNoxStudio.Network.Simulation
             #endif
         }
 
+        #if Client
+        public static void RunPhysicsTick(uint tick)
+        {
+            //
+            // 1. Handle Input
+            //
+            
+            // Predicting local player state and sending input to server
+            if (NetworkPlayer.LocalNetworkPlayer)
+                NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
+            
+            //
+            // 2. Handle Physics
+            //
+            
+            // Simulating physics for the time between ticks
+            Physics.Simulate(PhysicsTickSystem.TimeBetweenTicks);
+            
+            //
+            // 3. Handle Game State
+            //
+            
+            SnapshotManager.TakeSnapshot(tick);
+        }
+        #endif
+        
         #if Client
         /// <summary>
         /// We adjust the physics tick system by either calculating more or calculating less ticks
