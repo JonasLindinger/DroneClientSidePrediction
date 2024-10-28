@@ -35,13 +35,7 @@ namespace LindoNoxStudio.Network.Simulation
             
             // Setup the Physics Tick System and subscribing to it
             PhysicsTickSystem = new TickSystem(PhysicsTickRate, startingTick);
-            #if Client
-            PhysicsTickSystem.OnTick += SaveInput;
-            #endif
             PhysicsTickSystem.OnTick += HandlePhysicsTick;
-            
-            // Todo: Do this in the handle physics tick method and comment this out / delete this
-            PhysicsTickSystem.OnTick += HandleStateTick;
             
             #if Server
             // Setup the Adjustment Tick System and subscribing to it
@@ -68,14 +62,32 @@ namespace LindoNoxStudio.Network.Simulation
         /// <param name="tick"></param>
         public static void HandlePhysicsTick(uint tick)
         {
-            // Simulating physics for the time between ticks
-            Physics.Simulate(PhysicsTickSystem.TimeBetweenTicks);
+            // Works:
+            // Physics
+            // Input
+            // GameState
+            
+            // Should be better:
+            // Input
+            // Physics
+            // GameState
 
             #if Client
+            //
+            // 1. Handle Input
+            //
+            if (NetworkClient.LocalClient == null) return;
+            if (NetworkClient.LocalClient._input == null) return;
             
+            // Todo: Do this in a seperate Tick System, so that it is possible to keep the RPC send rate down by still having 120 Physics Tick Rate
+            // Save ande send inputs
+            NetworkClient.LocalClient._input.SaveInput(tick);
+            NetworkClient.LocalClient._input.SendInputs();
+                
             // Predicting local player state and sending input to server
             if (NetworkPlayer.LocalNetworkPlayer)
                 NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
+            
             #elif Server
             // Update all players
             foreach (Client client in Client.Clients)
@@ -84,33 +96,27 @@ namespace LindoNoxStudio.Network.Simulation
                 client.NetworkPlayer.HandleState(tick);
             }
             #endif
-        }
-        
-        // Todo: move this in the other method. And improve the reconciliation
-        /// <summary>
-        /// Does the same as physics tick, but we reconcile to the state.
-        /// </summary>
-        /// <param name="tick"></param>
-        /// <param name="isReaconciliation"></param>
-        public static void HandlePhysicsTick(uint tick, bool isReaconciliation = false)
-        {
+            
+            //
+            // 2. Handle Physics
+            //
+            
             // Simulating physics for the time between ticks
             Physics.Simulate(PhysicsTickSystem.TimeBetweenTicks);
-
-            #if Client
-            // Rollback all other objects if isReaconciliation is true
-            if (isReaconciliation)
-                NetworkedObject.Rollback(tick);
             
-            // Predicting local player state and sending input to server
-            if (NetworkPlayer.LocalNetworkPlayer)
-                NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
+            //
+            // 3. Handle Game State
+            //
+            
+            #if Client
+            SnapshotManager.TakeSnapshot(tick);
             #elif Server
-            // Move all players
+            GameState currentGameState = SnapshotManager.TakeSnapshot(tick);
+            // Send Game State to all players
             foreach (Client client in Client.Clients)
             {
                 if (!client.NetworkPlayer) continue;
-                client.NetworkPlayer.HandleState(tick);
+                client.NetworkPlayer.OnServerGameStateRPC(currentGameState);
             }
             #endif
         }
@@ -134,41 +140,7 @@ namespace LindoNoxStudio.Network.Simulation
             }
         }
         
-        /// <summary>
-        /// Saves the input of the local client
-        /// </summary>
-        /// <param name="tick"></param>
-        private static void SaveInput(uint tick)
-        {
-            // Saving input for the current tick
-            if (!NetworkClient.LocalClient) return;
-            if (!NetworkClient.LocalClient._input) return;
-            NetworkClient.LocalClient._input.SaveInput(tick);
-        }
         #endif
-        
-        // Todo: Send Game States instead of Player States
-        /// <summary>
-        /// On the Client, we send the ClientInputStates and if we are Server, we send the Game State.
-        /// </summary>
-        /// <param name="tick"></param>
-        private static void HandleStateTick(uint tick)
-        {
-            #if Client
-            // Send inputs to server
-            if (!NetworkClient.LocalClient) return;
-            if (!NetworkClient.LocalClient._input) return;
-            NetworkClient.LocalClient._input.SendInputs();
-            #elif Server
-            // Sending states to clients
-            foreach (var client in Client.Clients)
-            {
-                if (!client.NetworkPlayer) continue;
-                if (!client.NetworkPlayer._playerStateSyncronisation) continue;
-                client.NetworkPlayer._playerStateSyncronisation.SendState();
-            }
-            #endif
-        }
         
         #if Server
         /// <summary>

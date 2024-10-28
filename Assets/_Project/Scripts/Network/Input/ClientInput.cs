@@ -86,30 +86,21 @@ namespace LindoNoxStudio.Network.Input
                     return clientInputState;
                 }
             }
-            else
-            {
-                clientInputState = new ClientInputState();                
-            }
             
+            clientInputState = new ClientInputState();
             // We don't have the ClientInputState, so we return the current Input State
-            
-            // Getting Inputs
-            Vector2 cycle;
-            float pedals;
-            float throttle;
-            cycle = _playerInput.actions["Cycle"].ReadValue<Vector2>();
-            pedals = _playerInput.actions["Pedals"].ReadValue<float>();
-            throttle = _playerInput.actions["Throttle"].ReadValue<float>();
-
-            // Setting rotation
             try
             {
-                PlayerController playerController = NetworkPlayer.LocalNetworkPlayer._playerController;
+                Vector2 cycle = _playerInput.actions["Cycle"].ReadValue<Vector2>();
+                float pedals = _playerInput.actions["Pedals"].ReadValue<float>();
+                float throttle = _playerInput.actions["Throttle"].ReadValue<float>();
+                
                 clientInputState.SetUp(tick, cycle, pedals, throttle);
             }
             catch (NullReferenceException e)
             {
-                clientInputState.SetUp(tick, cycle, pedals, throttle);
+                // Using empty ClientInputState
+                clientInputState.SetUp(tick, Vector2.zero, 0, 0);    
             }
 
             return clientInputState;
@@ -159,8 +150,7 @@ namespace LindoNoxStudio.Network.Input
         /// <returns></returns>
         public ClientInputState GetClientInputState(uint tick)
         {
-            ClientInputState clientInputState = new ClientInputState();
-            clientInputState = _clientInputStates[tick % InputBufferSize];
+             ClientInputState clientInputState = _clientInputStates[tick % InputBufferSize];
             
             // If the current input is null, but the last input isn't null, we just repeat the last input and save it as the current input
             if (clientInputState == null && _clientInputStates[(tick - 1) % InputBufferSize] != null)

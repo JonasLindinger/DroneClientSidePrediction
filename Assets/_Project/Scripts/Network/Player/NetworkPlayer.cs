@@ -1,3 +1,4 @@
+using System.Linq;
 using LindoNoxStudio.Network.Input;
 using LindoNoxStudio.Network.Simulation;
 using Unity.Netcode;
@@ -14,6 +15,9 @@ namespace LindoNoxStudio.Network.Player
         // Local Network Player Singleton reference
         public static NetworkPlayer LocalNetworkPlayer { get; private set; }
         
+        // Values
+        private uint _lastReceavedGameStateTick;
+        
         #elif Server
         // Client info reference
         private Client _networkClient;
@@ -21,8 +25,6 @@ namespace LindoNoxStudio.Network.Player
         
         // References
         [HideInInspector] public PlayerController _playerController;
-        [HideInInspector] public PlayerNetworkedObject _playerNetworkedObject;
-        [HideInInspector] public PlayerStateSyncronisation _playerStateSyncronisation;
         
         public override void OnNetworkSpawn()
         {
@@ -37,9 +39,7 @@ namespace LindoNoxStudio.Network.Player
             #endif
 
             // Referencing
-            _playerStateSyncronisation = GetComponent<PlayerStateSyncronisation>();
             _playerController = GetComponent<PlayerController>();
-            _playerNetworkedObject = GetComponent<PlayerNetworkedObject>();
         }
         
         public override void OnNetworkDespawn()
@@ -61,11 +61,10 @@ namespace LindoNoxStudio.Network.Player
             // Getting input to process
             ClientInputState input = NetworkClient.LocalClient._input.GetClientInputState(tick);
             
-            _playerNetworkedObject.TakeSnapshot(tick);
-
             // Process new input
             _playerController.OnInput(input);
         }
+        
         #elif Server
         /// <summary>
         /// Sets and saves the Game State of this Player
@@ -75,12 +74,48 @@ namespace LindoNoxStudio.Network.Player
         {   
             // Getting input to process
             ClientInputState input = _networkClient.NetworkClient._input.GetClientInputState(tick);
-
-            _playerStateSyncronisation.SaveState(tick, input);
             
             // Process new input
             _playerController.OnInput(input);
         }
         #endif
+
+        /// <summary>
+        /// Remote procedural call.
+        /// Server sends the client the current GameState and the Client applys it and check his local movement
+        /// </summary>
+        [Rpc(SendTo.Owner, Delivery = RpcDelivery.Reliable)]
+        public void OnServerGameStateRPC(GameState gameState)
+        {
+            #if Client
+            bool isValid = false;
+            IState localPlayerState = new PlayerState();
+            
+            // Apply all Player States and compaire the local predictions
+            foreach (var kvp in gameState.States)
+            {
+                ulong networkId = kvp.Key;
+                IState state = kvp.Value;
+
+                Debug.Log("Client: " + OwnerClientId + " networkId: " + networkId);
+
+                if (state.GetStateType() != StateType.Player) continue;
+
+                // If this is the local player, save it and set isValid to true
+                if (networkId == NetworkObjectId)
+                {
+                    localPlayerState = state;
+                    isValid = true;
+                    continue;
+                }
+                
+                // Just for testing we just apply the state
+                SnapshotManager.ApplyState(gameState.Tick, networkId, state);
+                Debug.Log(" networkId: " + networkId);
+            }
+            
+            // Todo: Check localplayer
+            #endif
+        }
     }
 }

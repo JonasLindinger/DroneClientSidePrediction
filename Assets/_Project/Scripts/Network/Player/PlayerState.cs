@@ -1,26 +1,21 @@
 using Unity.Netcode;
 using UnityEngine;
 
-namespace LindoNoxStudio.Network.Player
+namespace LindoNoxStudio.Network.Simulation
 {
-    public class PlayerState : INetworkSerializable
+    public struct PlayerState : IState
     {
-        public uint Tick;
         public Vector3 Position;
-        public Vector3 Velocity;
-
-        public void SetUp(uint tick, Vector3 position, Vector3 velocity)
-        {
-            Tick = tick;
-            Position = position;
-            Velocity = velocity;
-        }
-
+        // Todo: Add Rotation
+        public Vector3 AngularVelocity;
+        
+        // Defining, that this is a Player State
+        public StateType GetStateType() => StateType.Player;
+        
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref Tick);
             serializer.SerializeValue(ref Position);
-            serializer.SerializeValue(ref Velocity);
+            serializer.SerializeValue(ref AngularVelocity);
         }
     }
 }

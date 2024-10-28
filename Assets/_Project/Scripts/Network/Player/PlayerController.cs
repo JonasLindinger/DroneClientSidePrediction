@@ -31,6 +31,7 @@ namespace LindoNoxStudio.Network.Player
             // Referencing
             _rb = GetComponent<Rigidbody>();
             _rb.freezeRotation = true;
+            _rb.useGravity = false;
 
             #if Client
             // Cursor
@@ -72,38 +73,10 @@ namespace LindoNoxStudio.Network.Player
             Vector3 inputForce = new Vector3(input.GetCycle().x, input.Throttle, input.GetCycle().y).normalized;
             Vector3 gravityCounterForce = Vector3.up * (_rb.mass * Physics.gravity.magnitude);
             Vector3 engineForce =
-                gravityCounterForce + // Counter gravity
+                //gravityCounterForce + // Counter gravity We don't counter gravity. We just don't enable gravity at all
                 (transform.TransformDirection(inputForce) * speed);  // Move Input * Power
 
             return engineForce;
         }
-        
-
-        #region State
-        
-        // Todo: Move this code in another script
-        /// <summary>
-        /// Returns the current state of the Player
-        /// </summary>
-        /// <param name="tick"></param>
-        /// <returns></returns>
-        public PlayerState GetState(uint tick)
-        {
-            PlayerState state = new PlayerState();
-            state.SetUp(tick, transform.position, _rb.linearVelocity);
-            
-            return state;
-        }
-
-        // Todo: Move this code in another script
-        public void ApplyState(PlayerState state, uint tick = 0)
-        {
-            transform.position = state.Position;
-            _rb.linearVelocity = state.Velocity;
-            
-            // Todo: Do Rotation
-        }
-
-        #endregion
     }
 }
