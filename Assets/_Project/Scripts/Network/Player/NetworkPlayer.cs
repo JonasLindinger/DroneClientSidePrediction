@@ -88,33 +88,21 @@ namespace LindoNoxStudio.Network.Player
         public void OnServerGameStateRPC(GameState gameState)
         {
             #if Client
-            bool isValid = false;
-            IState localPlayerState = new PlayerState();
-            
-            // Apply all Player States and compaire the local predictions
+            // Apply all Player States
             foreach (var kvp in gameState.States)
             {
                 ulong networkId = kvp.Key;
                 IState state = kvp.Value;
 
-                Debug.Log("Client: " + OwnerClientId + " networkId: " + networkId);
-
-                if (state.GetStateType() != StateType.Player) continue;
-
-                // If this is the local player, save it and set isValid to true
-                if (networkId == NetworkObjectId)
-                {
-                    localPlayerState = state;
-                    isValid = true;
+                // Return early if state is not PlayerState
+                if (!(state is PlayerState playerState))
                     continue;
-                }
                 
-                // Just for testing we just apply the state
-                SnapshotManager.ApplyState(gameState.Tick, networkId, state);
-                Debug.Log(" networkId: " + networkId);
+                // Apply the state
+                SnapshotManager.ApplyState(gameState.Tick, networkId, playerState, networkId == NetworkObjectId);
             }
             
-            // Todo: Check localplayer
+            // Todo: Do next ticks
             #endif
         }
     }

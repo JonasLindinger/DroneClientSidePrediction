@@ -13,6 +13,10 @@ namespace LindoNoxStudio.Network.Simulation
         private const int GameStateBufferSize = 128;
         private static GameState[] _gameStates = new GameState[GameStateBufferSize];
         
+        #if Server
+        private static uint _latestGameStateTick;
+        #endif
+        
         /// <summary>
         /// Every Networked Object registered will be included in the GameState.
         /// It wouldn't make to Unregister Objects so we don't have a method for that!
@@ -23,17 +27,29 @@ namespace LindoNoxStudio.Network.Simulation
         {
             _networkedObjects.Add(id, networkedObject);
         }
+
+        #if Server
+        /// <summary>
+        /// Returns the newest GameState
+        /// </summary>
+        public static GameState GetLatestGameState()
+        {
+            return _gameStates[(int)_latestGameStateTick % GameStateBufferSize];
+        }
+        #endif
         
         /// <summary>
         /// Saves the current GameState.
         /// </summary>
         /// <param name="tick">Current Tick</param>
-        public static GameState TakeSnapshot(uint tick)
+        public static void TakeSnapshot(uint tick)
         {
             GameState currentGameState = GetCurrentState(tick);
 
             _gameStates[(int)tick % GameStateBufferSize] = currentGameState;
-            return currentGameState;
+            #if Server
+            _latestGameStateTick = tick;
+            #endif
         }
 
         /// <summary>
@@ -76,18 +92,45 @@ namespace LindoNoxStudio.Network.Simulation
                     break;
                 case StateType.Player:
                     var playerData = GetPlayerStates(tick, networkId, state);
-                    Debug.Log("IsValid: " + playerData.isValid);
                     // Break if the data isn't valid
                     if (!playerData.isValid)
                     {
                         Debug.LogWarning("Not Valid Data!");
                         break;
                     }
+                    // Debugging position
+                    DebugDrawCircle(playerData.playerState.Position,0.5f, Color.grey);
+                    DebugDrawCircle(playerData.predictedPlayerState.Position,0.5f, Color.green);
+                    
                     return CheckForReconciliation(playerData.playerState, playerData.predictedPlayerState);
                     break;
             }
 
             return true;
+        }
+        
+        // Todo: Remove this in final build
+        /// <summary>
+        /// Debugging method
+        /// </summary>
+        /// <param name="center"></param>
+        /// <param name="radius"></param>
+        /// <param name="color"></param>
+        /// <param name="segments"></param>
+        private static void DebugDrawCircle(Vector3 center, float radius, Color color, int segments = 36)
+        {
+            float angleStep = 360f / segments;
+
+            for (int i = 0; i < segments; i++)
+            {
+                float angle = i * angleStep * Mathf.Deg2Rad;
+                float nextAngle = (i + 1) * angleStep * Mathf.Deg2Rad;
+
+                Vector3 start = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * radius + center;
+                Vector3 end = new Vector3(Mathf.Cos(nextAngle), 0, Mathf.Sin(nextAngle)) * radius + center;
+
+                Debug.DrawLine(start, end, color);
+            }
         }
 
         #region Player State
@@ -142,7 +185,7 @@ namespace LindoNoxStudio.Network.Simulation
         private static bool CheckForReconciliation(PlayerState playerState, PlayerState predictedPlayerState)
         {
             // Check for Position error
-            if (Vector3.Distance(playerState.Position, predictedPlayerState.Position) < 0.001f)
+            if (Vector3.Distance(playerState.Position, predictedPlayerState.Position) > 0.001f)
                 return true;
             else return false;
         }
@@ -222,7 +265,7 @@ namespace LindoNoxStudio.Network.Simulation
         /// </summary>
         /// <param name="networkId">Object'S NetworkId</param>
         /// <param name="state"></param>
-        public static void ApplyState(uint tick, ulong networkId, IState state)
+        public static void ApplyState(uint tick, ulong networkId, IState state, bool isLocal)
         {
             NetworkedObject networkedObject = _networkedObjects[networkId];
 
@@ -232,17 +275,23 @@ namespace LindoNoxStudio.Network.Simulation
                 Debug.LogWarning("Something went wrong!");
                 return;
             }
-
-            networkedObject.ApplyState(state);
-            CheckForReconciliation(tick, networkId, state);
-            return;
             
             if (CheckForReconciliation(tick, networkId, state))
             {
+                if (isLocal) 
+                    Debug.LogWarning("Local player prediction was wrong!");
+                else 
+                    Debug.Log("Remote player prediction was wrong!");
                 networkedObject.ApplyState(state);
             }
-            else
+            // If we predicted correct. We apply the necessary things like velocity for the next prediction.
+            // But if this is the local player. We don't do that because we have the input of the client
+            else if (isLocal)
             {
+                if (isLocal) 
+                    Debug.Log("Local player prediction was right!");
+                else 
+                    Debug.Log("Remote player prediction was right!");
                 networkedObject.ApplyNecessaryThings(state);
             }
         }
