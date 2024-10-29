@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using LindoNoxStudio.Network.Ball;
+using LindoNoxStudio.Network.Player;
 using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -43,9 +44,9 @@ namespace LindoNoxStudio.Network.Simulation
         /// Saves the current GameState.
         /// </summary>
         /// <param name="tick">Current Tick</param>
-        public static void TakeSnapshot(uint tick)
+        public static void TakeSnapshot(uint tick, bool localPlayerPredictionWasWrong = false)
         {
-            GameState currentGameState = GetCurrentState(tick);
+            GameState currentGameState = GetCurrentState(tick, localPlayerPredictionWasWrong);
 
             _gameStates[(int)tick % GameStateBufferSize] = currentGameState;
             #if Server
@@ -57,7 +58,7 @@ namespace LindoNoxStudio.Network.Simulation
         /// Returns the current GameState.
         /// </summary>
         /// <param name="tick">Current Tick</param>
-        private static GameState GetCurrentState(uint tick)
+        private static GameState GetCurrentState(uint tick, bool localPlayerPredictionWasWrong = false)
         {
             GameState currentGameState = new GameState();
             currentGameState.Tick = tick;
@@ -67,7 +68,45 @@ namespace LindoNoxStudio.Network.Simulation
                 ulong networkId = kvp.Key;
                 NetworkedObject networkedObject = kvp.Value;
 
-                IState state = networkedObject.GetCurrentState();
+                IState state = null;
+                #if Client
+                if (NetworkPlayer.LocalNetworkPlayer)
+                {
+                    // Is Local Player
+                    if (NetworkPlayer.LocalNetworkPlayer.NetworkObjectId == networkId)
+                    {
+                        if (!localPlayerPredictionWasWrong)
+                        {
+                            GameState gameState = _gameStates[(int)tick % GameStateBufferSize];
+                            if (gameState.Tick != tick)
+                            {
+                                Debug.Log("Something went wrong!");
+                                state = networkedObject.GetCurrentState();
+                            }
+                            else
+                            {
+                                PlayerState playerState = (PlayerState) gameState.States[networkId];
+                                state = playerState;
+                            }
+                        }
+                        else
+                        {
+                            state = networkedObject.GetCurrentState();
+                        }
+                    }
+                    else
+                    {
+                        state = networkedObject.GetCurrentState();
+                    }
+                    
+                }
+                else
+                {
+                    state = networkedObject.GetCurrentState();
+                }
+                #elif Server
+                state = networkedObject.GetCurrentState();
+                #endif
                 
                 currentGameState.States.Add(networkId, state);
             }
@@ -100,7 +139,7 @@ namespace LindoNoxStudio.Network.Simulation
                         break;
                     }
                     // Debugging position
-                    DebugDrawCircle(playerData.playerState.Position,0.5f, Color.grey);
+                    DebugDrawCircle(playerData.playerState.Position,0.5f, Color.red);
                     DebugDrawCircle(playerData.predictedPlayerState.Position,0.5f, Color.green);
                     
                     return CheckForReconciliation(playerData.playerState, playerData.predictedPlayerState);
@@ -118,7 +157,7 @@ namespace LindoNoxStudio.Network.Simulation
         /// <param name="radius"></param>
         /// <param name="color"></param>
         /// <param name="segments"></param>
-        private static void DebugDrawCircle(Vector3 center, float radius, Color color, int segments = 36)
+        private static void DebugDrawCircle(Vector3 center, float radius, Color color, int segments = 36, float duration = 0.25f)
         {
             float angleStep = 360f / segments;
 
@@ -130,7 +169,7 @@ namespace LindoNoxStudio.Network.Simulation
                 Vector3 start = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * radius + center;
                 Vector3 end = new Vector3(Mathf.Cos(nextAngle), 0, Mathf.Sin(nextAngle)) * radius + center;
 
-                Debug.DrawLine(start, end, color);
+                Debug.DrawLine(start, end, color, duration);
             }
         }
 
@@ -261,12 +300,35 @@ namespace LindoNoxStudio.Network.Simulation
             // Todo: Do Reconciliation method
         }
 
+        // Todo: Delete this
+        /// <summary>
+        /// Debuging method.
+        /// </summary>
+        public static void CompaireState(uint tick, ulong networkId)
+        {
+            GameState currentState = GetCurrentState(tick);
+            if (_gameStates[tick % GameStateBufferSize].Tick != tick) return;
+            GameState oldState = _gameStates[tick % GameStateBufferSize];
+
+            PlayerState currentPlayerState = (PlayerState) currentState.States[networkId];
+            PlayerState oldPlayerState = (PlayerState) oldState.States[networkId];
+
+            if (Vector3.Distance(currentPlayerState.Position, oldPlayerState.Position) > 0.001f)
+            {
+                DebugDrawCircle(currentPlayerState.Position, 0.5f, Color.magenta, 36, 20);
+                DebugDrawCircle(oldPlayerState.Position, 0.5f, Color.cyan, 36, 20);
+            }
+        }
+        
         /// <summary>
         /// Applys the state on the object with the corresponding network Id
         /// </summary>
-        /// <param name="networkId">Object'S NetworkId</param>
+        /// <param name="tick"></param>
+        /// <param name="networkId"></param>
         /// <param name="state"></param>
-        public static void ApplyState(uint tick, ulong networkId, IState state, bool isLocal)
+        /// <param name="isLocal"></param>
+        /// <returns>Return's if the prediction was wrong</returns>
+        public static bool ApplyState(uint tick, ulong networkId, IState state, bool isLocal)
         {
             NetworkedObject networkedObject = _networkedObjects[networkId];
 
@@ -274,44 +336,28 @@ namespace LindoNoxStudio.Network.Simulation
             if (networkedObject == null)
             {
                 Debug.LogWarning("Something went wrong!");
-                return;
+                return true;
+            }
+
+            if (isLocal)
+            {
+                networkedObject.ApplyState(state);
+                return true;
             }
             
             if (CheckForReconciliation(tick, networkId, state))
             {
-                if (isLocal) 
-                    Debug.LogWarning("Local player prediction was wrong!");
-                else 
-                    Debug.Log("Remote player prediction was wrong!");
+                Debug.Log("Remote player prediction was wrong!");
                 networkedObject.ApplyState(state);
+                return true;
             }
             // If we predicted correct. We apply the necessary things like velocity for the next prediction.
-            // But if this is the local player. We don't do that because we have the input of the client
-            else if (isLocal)
+            else
             {
-                if (isLocal) 
-                    Debug.Log("Local player prediction was right!");
-                else 
-                    Debug.Log("Remote player prediction was right!");
+                Debug.Log("Remote player prediction was right!");
                 networkedObject.ApplyNecessaryThings(state);
+                return false;
             }
-        }
-        
-        /// <summary>
-        /// Applys the state on the object with the corresponding network Id
-        /// </summary>
-        /// <param name="networkId">Object'S NetworkId</param>
-        /// <param name="state"></param>
-        public static void ApplyState(uint tick, ulong networkId)
-        {
-            NetworkedObject networkedObject = _networkedObjects[networkId];
-            if (_gameStates[tick % GameStateBufferSize].Tick != tick)
-            {
-                Debug.LogWarning("Something went wrong!");
-                return;
-            }
-            
-            networkedObject.ApplyState(_gameStates[tick % GameStateBufferSize].States[networkId]);
         }
 
         #endif

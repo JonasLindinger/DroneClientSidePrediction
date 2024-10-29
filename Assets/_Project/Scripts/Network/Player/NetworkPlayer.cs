@@ -88,6 +88,8 @@ namespace LindoNoxStudio.Network.Player
         public void OnServerGameStateRPC(GameState gameState)
         {
             #if Client
+            bool localPlayerPredictionWasWrong = true;
+            
             // Apply all Player States
             foreach (var kvp in gameState.States)
             {
@@ -97,13 +99,17 @@ namespace LindoNoxStudio.Network.Player
                 // Return early if state is not PlayerState
                 if (!(state is PlayerState playerState))
                     continue;
-                
-                // Apply the state
-                SnapshotManager.ApplyState(gameState.Tick, networkId, playerState, networkId == NetworkObjectId);
+
+                if (networkId == NetworkObjectId)
+                    // Apply the state
+                    localPlayerPredictionWasWrong = SnapshotManager.ApplyState(gameState.Tick, networkId, playerState, true);
+                else
+                    // Apply the state
+                    SnapshotManager.ApplyState(gameState.Tick, networkId, playerState, false);
             }
             
             for (uint tick = gameState.Tick + 1; tick < SimulationManager.CurrentTick + 1; tick++)
-                SimulationManager.RunPhysicsTick(tick, true);
+                SimulationManager.RunPhysicsTick(tick, true, localPlayerPredictionWasWrong);
             #endif
         }
     }

@@ -110,7 +110,7 @@ namespace LindoNoxStudio.Network.Simulation
         }
 
         // ReSharper disable Unity.PerformanceAnalysis
-        public static void RunPhysicsTick(uint tick, bool isReconciliation = false)
+        public static void RunPhysicsTick(uint tick, bool isReconciliation = false, bool localPlayerPredictionWasWrong = false)
         {
             //
             // 1. Handle Physics
@@ -124,17 +124,9 @@ namespace LindoNoxStudio.Network.Simulation
             // 2. Handle Input
             //
                 
-            // Predicting local player state and sending input to server
-            if (isReconciliation)
-            {
-                if (NetworkPlayer.LocalNetworkPlayer)
-                    SnapshotManager.ApplyState(tick, NetworkPlayer.LocalNetworkPlayer.NetworkObjectId);
-            }
-            else
-            {
-                if (NetworkPlayer.LocalNetworkPlayer)
-                    NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
-            }
+            // Predicting local player state
+            if (NetworkPlayer.LocalNetworkPlayer)
+                NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
             
             #elif Server
             // Update all players
@@ -149,7 +141,7 @@ namespace LindoNoxStudio.Network.Simulation
             // 3. Save Game State
             //
             
-            SnapshotManager.TakeSnapshot(tick);
+            SnapshotManager.TakeSnapshot(tick, localPlayerPredictionWasWrong);
         } 
         
         #if Client
