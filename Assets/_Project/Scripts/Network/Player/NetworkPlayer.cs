@@ -3,6 +3,7 @@ using LindoNoxStudio.Network.Input;
 using LindoNoxStudio.Network.Simulation;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Analytics;
 using Client = LindoNoxStudio.Network.Connection.Client;
 using NetworkClient = LindoNoxStudio.Network.Connection.NetworkClient;
 
@@ -85,18 +86,18 @@ namespace LindoNoxStudio.Network.Player
         /// Server sends the client the current GameState and the Client applys it and check his local movement
         /// </summary>
         [Rpc(SendTo.Owner, Delivery = RpcDelivery.Reliable)]
-        public void OnServerGameStateRPC(GameState gameState)
+        public void OnServerGameStateRPC(GameState gameState, ClientInputState nextInputState)
         {
             #if Client
             bool isValid = false;
             IState localPlayerState = new PlayerState();
-            
-            // Apply all Player States and compaire the local predictions
+    
+            // Apply the server state
             foreach (var kvp in gameState.States)
             {
                 ulong networkId = kvp.Key;
                 IState state = kvp.Value;
-                
+        
                 if (state.GetStateType() != StateType.Player) continue;
 
                 // If this is the local player, save it and set isValid to true
@@ -106,19 +107,28 @@ namespace LindoNoxStudio.Network.Player
                     isValid = true;
                     continue;
                 }
-                
-                // Just for testing we just apply the state
+
+                // Apply state for non-local players, adding conditionally for snapping logic
                 SnapshotManager.ApplyState(gameState.Tick, networkId, state);
             }
-            
+    
             // Check local player state
-            SnapshotManager.ApplyState(gameState.Tick, NetworkObjectId, localPlayerState, true);
-            
-            // Saving the correct game state
+            if (isValid)
+            {
+                SnapshotManager.ApplyState(gameState.Tick, NetworkObjectId, localPlayerState, true);
+            }
+            else
+            {
+                Debug.LogWarning("Local player state missing in received game state.");
+            }
+    
+            // Save the corrected game state
             SnapshotManager.TakeSnapshot(gameState.Tick);
+            
+            _playerController.OnInput(nextInputState);
 
-            // Simulate next ticks agian
-            for (uint tick = (gameState.Tick + 1); tick < SimulationManager.CurrentTick; tick++)
+            // Simulate next ticks up to current tick
+            for (uint tick = gameState.Tick + 1; tick < SimulationManager.CurrentTick; tick++)
             {
                 SimulationManager.RunPhysicsTick(tick);
             }

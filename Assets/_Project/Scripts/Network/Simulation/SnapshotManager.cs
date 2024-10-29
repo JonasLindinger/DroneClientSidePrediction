@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using LindoNoxStudio.Network.Ball;
+using LindoNoxStudio.Network.Player;
 using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Analytics;
 
 namespace LindoNoxStudio.Network.Simulation
 {
@@ -12,6 +14,8 @@ namespace LindoNoxStudio.Network.Simulation
         
         private const int GameStateBufferSize = 128;
         private static GameState[] _gameStates = new GameState[GameStateBufferSize];
+
+        private static uint _latestSavedGameStateTick;
         
         /// <summary>
         /// Every Networked Object registered will be included in the GameState.
@@ -28,38 +32,49 @@ namespace LindoNoxStudio.Network.Simulation
         /// Saves the current GameState.
         /// </summary>
         /// <param name="tick">Current Tick</param>
-        public static GameState TakeSnapshot(uint tick)
+        public static void TakeSnapshot(uint tick)
         {
             GameState currentGameState = GetCurrentState(tick);
-
             _gameStates[(int)tick % GameStateBufferSize] = currentGameState;
-            return currentGameState;
+            _latestSavedGameStateTick = tick;
         }
 
+        #if Server
+        /// <summary>
+        /// Returns the latest saved snapshot
+        /// </summary>
+        /// <returns></returns>
+        public static GameState GetLatestSnapshot()
+        {
+            return _gameStates[(int)_latestSavedGameStateTick % GameStateBufferSize];
+        }
+        #endif
+        
         /// <summary>
         /// Returns the current GameState.
         /// </summary>
         /// <param name="tick">Current Tick</param>
         private static GameState GetCurrentState(uint tick)
         {
-            GameState currentGameState = new GameState();
-            currentGameState.Tick = tick;
-            
+            GameState currentGameState = new GameState
+            {
+                Tick = tick
+            };
+    
             foreach (var kvp in _networkedObjects)
             {
                 ulong networkId = kvp.Key;
                 NetworkedObject networkedObject = kvp.Value;
-
+        
                 IState state = networkedObject.GetCurrentState();
-                
                 currentGameState.States.Add(networkId, state);
             }
-            
+    
             return currentGameState;
         }
         
         #if Client
-
+        
         public static bool CheckForReconciliation(uint tick, ulong networkId, IState state)
         {
             switch (state.GetStateType())
@@ -82,11 +97,31 @@ namespace LindoNoxStudio.Network.Simulation
                         Debug.LogWarning("Not Valid Data!");
                         break;
                     }
+
+                    DebugDrawCircle(playerData.playerState.Position, 0.5f, Color.green);
+                    DebugDrawCircle(playerData.predictedPlayerState.Position, 0.5f, Color.red);
+                    
                     return CheckForReconciliation(playerData.playerState, playerData.predictedPlayerState);
                     break;
             }
 
             return true;
+        }
+        
+        private static void DebugDrawCircle(Vector3 center, float radius, Color color, int segments = 36)
+        {
+            float angleStep = 360f / segments;
+
+            for (int i = 0; i < segments; i++)
+            {
+                float angle = i * angleStep * Mathf.Deg2Rad;
+                float nextAngle = (i + 1) * angleStep * Mathf.Deg2Rad;
+
+                Vector3 start = new Vector3(Mathf.Cos(angle), 1, Mathf.Sin(angle)) * radius + center;
+                Vector3 end = new Vector3(Mathf.Cos(nextAngle), 1, Mathf.Sin(nextAngle)) * radius + center;
+
+                Debug.DrawLine(start, end, color);
+            }
         }
 
         #region Player State
@@ -223,27 +258,32 @@ namespace LindoNoxStudio.Network.Simulation
         /// <param name="state"></param>
         public static void ApplyState(uint tick, ulong networkId, IState state, bool isLocalPlayer = false)
         {
-            NetworkedObject networkedObject = _networkedObjects[networkId];
-
-            // Check for null reference
-            if (networkedObject == null)
+            if (!_networkedObjects.TryGetValue(networkId, out NetworkedObject networkedObject) || networkedObject == null)
             {
-                Debug.LogWarning("Something went wrong!");
+                Debug.LogWarning($"Networked object with ID {networkId} not found!");
                 return;
             }
-            
-            // Applying state
+    
+            // Check for reconciliation requirement
             if (CheckForReconciliation(tick, networkId, state))
             {
                 if (isLocalPlayer)
-                    Debug.LogWarning($"Prediction of local player wasn't correct");
-
-                networkedObject.ApplyState(state);
+                {
+                    Debug.LogWarning("Local player prediction was incorrect; reconciling with server state.");
+                    networkedObject.ApplyState(state); // Immediate for local player
+                }
+                else
+                {
+                    networkedObject.ApplyState(state); // Lerp the position
+                    networkedObject.ApplyNecessaryThings(state); // Apply any required adjustments
+                }
             }
             else if (!isLocalPlayer)
-                networkedObject.ApplyNecessaryThings(state);
+            {
+                networkedObject.ApplyNecessaryThings(state); // Minor corrections without full reconciliation
+            }
         }
-
+        
         #endif
     }
 }

@@ -30,7 +30,7 @@ namespace LindoNoxStudio.Network.Player
             // Return early if state is not PlayerState
             if (!(state is PlayerState playerState))
                 return;
-            
+
             transform.position = playerState.Position;
             _rb.angularVelocity = playerState.AngularVelocity;
         }

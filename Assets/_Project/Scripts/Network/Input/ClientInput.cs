@@ -3,6 +3,7 @@ using LindoNoxStudio.Network.Player;
 using LindoNoxStudio.Network.Simulation;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Analytics;
 using UnityEngine.InputSystem;
 
 namespace LindoNoxStudio.Network.Input
@@ -183,6 +184,7 @@ namespace LindoNoxStudio.Network.Input
             foreach (ClientInputState input in inputs)
             {
                 if (input == null) continue;
+                if (_clientInputStates[input.Tick % InputBufferSize].Tick == input.Tick) continue;
                 _clientInputStates[input.Tick % InputBufferSize] = input;
 
                 if (newestInputTick < input.Tick)
