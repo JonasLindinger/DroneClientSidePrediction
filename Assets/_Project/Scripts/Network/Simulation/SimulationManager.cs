@@ -7,7 +7,7 @@ namespace LindoNoxStudio.Network.Simulation
     public class SimulationManager : MonoBehaviour
     {
         // General settings. !Server and CLient have to have the same values!
-        public const int PhysicsTickRate = 60;
+        public const int PhysicsTickRate = 120;
         public const int NetworkTickRate = 60;
         #if Server
         // The ammount of time we send the tick adjustment rate to the Clients
@@ -109,7 +109,8 @@ namespace LindoNoxStudio.Network.Simulation
             RunPhysicsTick(tick);
         }
 
-        public static void RunPhysicsTick(uint tick)
+        // ReSharper disable Unity.PerformanceAnalysis
+        public static void RunPhysicsTick(uint tick, bool isReconciliation = false)
         {
             //
             // 1. Handle Physics
@@ -124,8 +125,16 @@ namespace LindoNoxStudio.Network.Simulation
             //
                 
             // Predicting local player state and sending input to server
-            if (NetworkPlayer.LocalNetworkPlayer)
-                NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
+            if (isReconciliation)
+            {
+                if (NetworkPlayer.LocalNetworkPlayer)
+                    SnapshotManager.ApplyState(tick, NetworkPlayer.LocalNetworkPlayer.NetworkObjectId);
+            }
+            else
+            {
+                if (NetworkPlayer.LocalNetworkPlayer)
+                    NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
+            }
             
             #elif Server
             // Update all players

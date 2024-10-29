@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using LindoNoxStudio.Network.Ball;
 using Unity.Netcode;
 using Unity.VisualScripting;
@@ -294,6 +295,23 @@ namespace LindoNoxStudio.Network.Simulation
                     Debug.Log("Remote player prediction was right!");
                 networkedObject.ApplyNecessaryThings(state);
             }
+        }
+        
+        /// <summary>
+        /// Applys the state on the object with the corresponding network Id
+        /// </summary>
+        /// <param name="networkId">Object'S NetworkId</param>
+        /// <param name="state"></param>
+        public static void ApplyState(uint tick, ulong networkId)
+        {
+            NetworkedObject networkedObject = _networkedObjects[networkId];
+            if (_gameStates[tick % GameStateBufferSize].Tick != tick)
+            {
+                Debug.LogWarning("Something went wrong!");
+                return;
+            }
+            
+            networkedObject.ApplyState(_gameStates[tick % GameStateBufferSize].States[networkId]);
         }
 
         #endif

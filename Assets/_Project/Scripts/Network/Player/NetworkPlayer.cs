@@ -102,7 +102,8 @@ namespace LindoNoxStudio.Network.Player
                 SnapshotManager.ApplyState(gameState.Tick, networkId, playerState, networkId == NetworkObjectId);
             }
             
-            // Todo: Do next ticks
+            for (uint tick = gameState.Tick + 1; tick < SimulationManager.CurrentTick + 1; tick++)
+                SimulationManager.RunPhysicsTick(tick, true);
             #endif
         }
     }
