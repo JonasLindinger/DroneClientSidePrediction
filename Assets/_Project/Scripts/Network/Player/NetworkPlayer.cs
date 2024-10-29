@@ -96,7 +96,9 @@ namespace LindoNoxStudio.Network.Player
             {
                 ulong networkId = kvp.Key;
                 IState state = kvp.Value;
-                
+
+                Debug.Log("Client: " + OwnerClientId + " networkId: " + networkId);
+
                 if (state.GetStateType() != StateType.Player) continue;
 
                 // If this is the local player, save it and set isValid to true
@@ -109,19 +111,10 @@ namespace LindoNoxStudio.Network.Player
                 
                 // Just for testing we just apply the state
                 SnapshotManager.ApplyState(gameState.Tick, networkId, state);
+                Debug.Log(" networkId: " + networkId);
             }
             
-            // Check local player state
-            SnapshotManager.ApplyState(gameState.Tick, NetworkObjectId, localPlayerState, true);
-            
-            // Saving the correct game state
-            SnapshotManager.TakeSnapshot(gameState.Tick);
-
-            // Simulate next ticks agian
-            for (uint tick = (gameState.Tick + 1); tick < SimulationManager.CurrentTick; tick++)
-            {
-                SimulationManager.RunPhysicsTick(tick);
-            }
+            // Todo: Check localplayer
             #endif
         }
     }
