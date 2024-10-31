@@ -408,7 +408,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 545094033
+  GlobalObjectIdHash: 2717123578
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 2
@@ -475,14 +475,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  speed: 8
-  sensitivity: 4
-  minMaxPitch: 30
-  minMaxRoll: 30
-  lerpSpeed: 2
-  finalPitch: 0
-  finalRoll: 0
-  yaw: 0
+  _speed: 4
+  _sensitivity: 1
+  _minMaxPitch: 30
+  _minMaxRoll: 30
+  _lerpSpeed: 2
+  _decoration: {fileID: 0}
 --- !u!114 &-5716710390188557675
 MonoBehaviour:
   m_ObjectHideFlags: 0

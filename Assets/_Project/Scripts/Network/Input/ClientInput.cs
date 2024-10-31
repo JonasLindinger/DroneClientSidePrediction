@@ -96,6 +96,10 @@ namespace LindoNoxStudio.Network.Input
             }
             
             clientInputState = new ClientInputState();
+            float yRotation = 0;
+            if (NetworkPlayer.LocalNetworkPlayer)
+                yRotation = NetworkPlayer.LocalNetworkPlayer._playerController._yaw;
+            
             // We don't have the ClientInputState, so we return the current Input State
             try
             {
@@ -103,12 +107,12 @@ namespace LindoNoxStudio.Network.Input
                 float pedals = _playerInput.actions["Pedals"].ReadValue<float>();
                 float throttle = _playerInput.actions["Throttle"].ReadValue<float>();
                 
-                clientInputState.SetUp(tick, transform.rotation.y, cycle, throttle, pedals);
+                clientInputState.SetUp(tick, yRotation, cycle, throttle, pedals);
             }
             catch (NullReferenceException e)
             {
                 // Using empty ClientInputState
-                clientInputState.SetUp(tick, transform.rotation.y, Vector2.zero, 0, 0);    
+                clientInputState.SetUp(tick, yRotation, Vector2.zero, 0, 0);
             }
 
             return clientInputState;

@@ -1,27 +1,34 @@
 using LindoNoxStudio.Network.Input;
+using LindoNoxStudio.Network.Simulation;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace LindoNoxStudio.Network.Player
 {
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerController : NetworkBehaviour
     {
-        // Values we change in unity
         [Header("Settings")] 
-        [SerializeField] private float speed = 8f;
-        [SerializeField] private float sensitivity = 4f;
+        [SerializeField] private float _speed = 8f;
+        [SerializeField] private float _sensitivity = 4f;
         [Space(10)]
         [Header("Animation")] 
-        [SerializeField] private float minMaxPitch = 30f;
-        [SerializeField] private float minMaxRoll = 30f;
-        [SerializeField] private float lerpSpeed = 2f;
+        [SerializeField] private float _minMaxPitch = 30f;
+        [SerializeField] private float _minMaxRoll = 30f;
+        [SerializeField] private float _lerpSpeed = 2f;
+        [Space(10)]
+        [Header("References")]
+        [SerializeField] private Transform _decoration;
         
-        // Values we change in code
-        [HideInInspector] public float finalPitch;
-        [HideInInspector] public float finalRoll;
-        [HideInInspector] public float yaw;
+        // Values
+        #if Client
+        public float _yaw;
+        #elif Server
+        private float _finalPitch;
+        private float _finalRoll;
+        #endif
         
         // References
         private Rigidbody _rb;
@@ -30,7 +37,10 @@ namespace LindoNoxStudio.Network.Player
         {
             // Referencing
             _rb = GetComponent<Rigidbody>();
+            
+            // Rigidbody setup
             _rb.freezeRotation = true;
+            _rb.useGravity = false;
 
             #if Client
             // Cursor
@@ -54,12 +64,17 @@ namespace LindoNoxStudio.Network.Player
         {
             if (input == null) return;
 
-            transform.eulerAngles = new Vector3(transform.rotation.x, input.Rotation, transform.rotation.z);
+            // Calculate Rotation
+            Quaternion rotation = Quaternion.Euler(0, input.Rotation, 0); // Calculating look direction
+            
+            // Apply Rotation
+            _rb.MoveRotation(rotation);
 
             // Applying Force
             _rb.AddForce(GetEngineForce(input), ForceMode.Force);
 
-            // Todo: Do Rotation (x and z)
+            // Do Rotation (y on Client | x and z on Server)
+            DoRotation(input);
         }
         
         /// <summary>
@@ -70,12 +85,41 @@ namespace LindoNoxStudio.Network.Player
         private Vector3 GetEngineForce(ClientInputState input)
         {
             Vector3 inputForce = new Vector3(input.GetCycle().x, input.Throttle, input.GetCycle().y).normalized;
-            Vector3 gravityCounterForce = Vector3.up * (_rb.mass * Physics.gravity.magnitude);
-            Vector3 engineForce =
-                gravityCounterForce + // Counter gravity We don't counter gravity. We just don't enable gravity at all
-                (transform.TransformDirection(inputForce) * speed);  // Move Input * Power
+            Vector3 engineForce = (transform.TransformDirection(inputForce) * _speed);
 
             return engineForce;
+        }
+        
+        /// <summary>
+        /// Rotates the player
+        /// </summary>
+        private void DoRotation(ClientInputState input)
+        {
+            #if Client
+            // Modify value
+            _yaw += input.Pedals * _sensitivity;
+            
+            // Calculate Rotation
+            Quaternion rotation = Quaternion.Euler(0, _yaw, 0); // Calculating look direction
+            
+            // Apply Rotation
+            _rb.MoveRotation(rotation);
+            #elif Server
+            return;
+            // Modify values
+            float pitch = input.GetCycle().y * _minMaxPitch;
+            float roll = -input.GetCycle().x * _minMaxRoll;
+
+            // Smoothing out values
+            _finalPitch = Mathf.Lerp(_finalPitch, pitch, SimulationManager.PhysicsTickSystem.TimeBetweenTicks * _lerpSpeed);
+            _finalRoll = Mathf.Lerp(_finalRoll, roll, SimulationManager.PhysicsTickSystem.TimeBetweenTicks * _lerpSpeed);
+            
+            // Calculate Rotation
+            Vector3 rotation = new Vector3(_finalPitch, transform.rotation.y, _finalRoll); // Calculating drone rotation
+            
+            // Apply Rotation
+            _decoration.eulerAngles = rotation;
+            #endif
         }
     }
 }
