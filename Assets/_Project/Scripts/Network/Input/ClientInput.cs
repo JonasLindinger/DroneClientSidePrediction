@@ -103,12 +103,12 @@ namespace LindoNoxStudio.Network.Input
                 float pedals = _playerInput.actions["Pedals"].ReadValue<float>();
                 float throttle = _playerInput.actions["Throttle"].ReadValue<float>();
                 
-                clientInputState.SetUp(tick, cycle, pedals, throttle);
+                clientInputState.SetUp(tick, transform.rotation.y, cycle, throttle, pedals);
             }
             catch (NullReferenceException e)
             {
                 // Using empty ClientInputState
-                clientInputState.SetUp(tick, Vector2.zero, 0, 0);    
+                clientInputState.SetUp(tick, transform.rotation.y, Vector2.zero, 0, 0);    
             }
 
             return clientInputState;
@@ -169,9 +169,9 @@ namespace LindoNoxStudio.Network.Input
             // If the current input is null, then we just create a new input with the current tick
             else if (clientInputState == null)
             {
-                Debug.Log("Using null input!");
+                Debug.LogWarning("Using null input!");
                 clientInputState = new ClientInputState();
-                clientInputState.SetUp(tick, Vector2.zero, 0);
+                clientInputState.SetUp(tick, transform.rotation.y, Vector2.zero, 0, 0);
                 _clientInputStates[tick % InputBufferSize] = clientInputState;
             }
 

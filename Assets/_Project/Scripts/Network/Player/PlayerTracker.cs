@@ -22,6 +22,7 @@ namespace LindoNoxStudio.Network.Player
             return new PlayerState()
             {
                 Position = transform.position,
+                Rotation = transform.eulerAngles,
                 Velocity = _rb.linearVelocity,
                 AngularVelocity = _rb.angularVelocity,
             };
@@ -34,6 +35,7 @@ namespace LindoNoxStudio.Network.Player
                 return;
 
             transform.position = playerState.Position;
+            transform.eulerAngles = playerState.Rotation;
             _rb.linearVelocity = playerState.Velocity;
             _rb.angularVelocity = playerState.AngularVelocity;
         }

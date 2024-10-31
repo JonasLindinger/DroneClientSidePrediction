@@ -31,7 +31,6 @@ namespace LindoNoxStudio.Network.Player
             // Referencing
             _rb = GetComponent<Rigidbody>();
             _rb.freezeRotation = true;
-            _rb.useGravity = false;
 
             #if Client
             // Cursor
@@ -55,12 +54,12 @@ namespace LindoNoxStudio.Network.Player
         {
             if (input == null) return;
 
-            // Todo: Apply Rotation of Input
+            transform.eulerAngles = new Vector3(transform.rotation.x, input.Rotation, transform.rotation.z);
 
             // Applying Force
             _rb.AddForce(GetEngineForce(input), ForceMode.Force);
 
-            // Todo: Do Rotation
+            // Todo: Do Rotation (x and z)
         }
         
         /// <summary>
@@ -73,7 +72,7 @@ namespace LindoNoxStudio.Network.Player
             Vector3 inputForce = new Vector3(input.GetCycle().x, input.Throttle, input.GetCycle().y).normalized;
             Vector3 gravityCounterForce = Vector3.up * (_rb.mass * Physics.gravity.magnitude);
             Vector3 engineForce =
-                //gravityCounterForce + // Counter gravity We don't counter gravity. We just don't enable gravity at all
+                gravityCounterForce + // Counter gravity We don't counter gravity. We just don't enable gravity at all
                 (transform.TransformDirection(inputForce) * speed);  // Move Input * Power
 
             return engineForce;

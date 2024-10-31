@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace LindoNoxStudio.Network.Game.Camera
 {
-    #if Client
     [RequireComponent(typeof(CinemachineCamera))]
     public class CameraManager : MonoBehaviour
     {
+        #if Client
         // Instance for Singleton reference
         public static CameraManager Instance { get; private set; }
         
@@ -77,6 +77,6 @@ namespace LindoNoxStudio.Network.Game.Camera
             
             UpdateCamera();
         }
+        #endif
     }
-    #endif
 }

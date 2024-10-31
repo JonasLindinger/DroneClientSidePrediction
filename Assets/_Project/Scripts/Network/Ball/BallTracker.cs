@@ -24,6 +24,7 @@ namespace LindoNoxStudio.Network.Ball
             return new BallState()
             {
                 Position = transform.position,
+                Rotation = transform.eulerAngles,
                 Velocity = _rb.linearVelocity,
                 AngularVelocity = _rb.angularVelocity
             };
@@ -36,6 +37,7 @@ namespace LindoNoxStudio.Network.Ball
                 return;
             
             transform.position = ballState.Position;
+            transform.eulerAngles = ballState.Rotation;
             _rb.angularVelocity = ballState.AngularVelocity;
             _rb.linearVelocity = ballState.Velocity;
         }

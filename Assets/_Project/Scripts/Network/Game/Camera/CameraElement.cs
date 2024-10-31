@@ -2,9 +2,9 @@ using Unity.Netcode;
 
 namespace LindoNoxStudio.Network.Game.Camera
 {
-    #if Client
     public class CameraElement : NetworkBehaviour
     {
+        #if Client
         public override void OnNetworkSpawn()
         {
             Register();
@@ -30,6 +30,6 @@ namespace LindoNoxStudio.Network.Game.Camera
         {
             CameraManager.Instance.RemoveCameraElement(this);
         }
+        #endif
     }
-    #endif
 }
