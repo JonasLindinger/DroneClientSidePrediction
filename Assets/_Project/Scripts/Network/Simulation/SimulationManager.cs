@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using LindoNoxStudio.Network.Connection;
+using LindoNoxStudio.Network.Input;
 using LindoNoxStudio.Network.Player;
 using UnityEngine;
 
@@ -76,7 +78,7 @@ namespace LindoNoxStudio.Network.Simulation
             NetworkClient.LocalClient._input.SendInputs();
             #elif Server
             // Send Game State to all players
-            foreach (Client client in Client.Clients)
+            foreach (Client client in Client.ClientThatSendInput)
             {
                 if (!client.NetworkPlayer) continue;
                 client.NetworkPlayer.OnServerGameStateRPC(SnapshotManager.GetLatestGameState());
@@ -110,7 +112,7 @@ namespace LindoNoxStudio.Network.Simulation
         }
 
         // ReSharper disable Unity.PerformanceAnalysis
-        public static void RunPhysicsTick(uint tick, bool isReconciliation = false, bool localPlayerPredictionWasWrong = false)
+        public static void RunPhysicsTick(uint tick, bool isRecon = false)
         {
             //
             // 1. Handle Physics
@@ -119,6 +121,7 @@ namespace LindoNoxStudio.Network.Simulation
             // Simulating physics for the time between ticks
             Physics.Simulate(PhysicsTickSystem.TimeBetweenTicks);
             
+            ClientInputState inputUsed = new ClientInputState();
             #if Client
             //
             // 2. Handle Input
@@ -126,7 +129,9 @@ namespace LindoNoxStudio.Network.Simulation
                 
             // Predicting local player state
             if (NetworkPlayer.LocalNetworkPlayer)
-                NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
+            {
+                inputUsed = NetworkPlayer.LocalNetworkPlayer.PredictLocalState(tick);
+            }
             
             #elif Server
             // Update all players
@@ -140,8 +145,8 @@ namespace LindoNoxStudio.Network.Simulation
             //
             // 3. Save Game State
             //
-            
-            SnapshotManager.TakeSnapshot(tick, localPlayerPredictionWasWrong);
+
+            SnapshotManager.TakeSnapshot(tick);
         } 
         
         #if Client

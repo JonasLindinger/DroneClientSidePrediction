@@ -21,6 +21,7 @@ namespace LindoNoxStudio.Network.Player
             return new PlayerState()
             {
                 Position = transform.position,
+                Velocity = _rb.linearVelocity,
                 AngularVelocity = _rb.angularVelocity,
             };
         }
@@ -32,16 +33,7 @@ namespace LindoNoxStudio.Network.Player
                 return;
 
             transform.position = playerState.Position;
-            _rb.angularVelocity = playerState.AngularVelocity;
-        }
-
-        public override void ApplyNecessaryThings(IState state)
-        {
-            // Return early if state is not PlayerState
-            if (!(state is PlayerState playerState))
-                return;
-            
-            // Apply velocity
+            _rb.linearVelocity = playerState.Velocity;
             _rb.angularVelocity = playerState.AngularVelocity;
         }
     }

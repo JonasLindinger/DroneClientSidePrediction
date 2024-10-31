@@ -56,10 +56,10 @@ namespace LindoNoxStudio.Network.Player
             if (input == null) return;
 
             // Todo: Apply Rotation of Input
-            
+
             // Applying Force
             _rb.AddForce(GetEngineForce(input), ForceMode.Force);
-            
+
             // Todo: Do Rotation
         }
         

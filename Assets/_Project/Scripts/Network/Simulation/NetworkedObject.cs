@@ -16,6 +16,5 @@ namespace LindoNoxStudio.Network.Simulation
 
         public abstract IState GetCurrentState();
         public abstract void ApplyState(IState state);
-        public abstract void ApplyNecessaryThings(IState state);
     }
 }

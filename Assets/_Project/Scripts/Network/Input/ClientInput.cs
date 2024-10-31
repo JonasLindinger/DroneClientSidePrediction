@@ -1,4 +1,5 @@
 using System;
+using LindoNoxStudio.Network.Connection;
 using LindoNoxStudio.Network.Player;
 using LindoNoxStudio.Network.Simulation;
 using Unity.Netcode;
@@ -12,7 +13,7 @@ namespace LindoNoxStudio.Network.Input
     public class ClientInput : NetworkBehaviour
     {
         // Count of Ticks we save
-        private const int InputBufferSize = 128;
+        private const int InputBufferSize = 1028;
         
         #if Client
         // My Client Inputs
@@ -26,10 +27,13 @@ namespace LindoNoxStudio.Network.Input
         #elif Server
         // Client Inputs
         private ClientInputState[] _clientInputStates = new ClientInputState[InputBufferSize];
+        
+        // The Client of this Object
+        [HideInInspector] public Client ClientInfo;
         #endif
         
         // Calculated Buffer Size
-        [HideInInspector] public int _bufferSize = 3;
+        [HideInInspector] public int _bufferSize = (int) WantedBufferSize.LowLatency;
         
         public override void OnNetworkSpawn()
         {
@@ -162,6 +166,7 @@ namespace LindoNoxStudio.Network.Input
             // If the current input is null, then we just create a new input with the current tick
             else if (clientInputState == null)
             {
+                Debug.Log("Using null input!");
                 clientInputState = new ClientInputState();
                 clientInputState.SetUp(tick, Vector2.zero, 0);
                 _clientInputStates[tick % InputBufferSize] = clientInputState;
@@ -179,12 +184,15 @@ namespace LindoNoxStudio.Network.Input
         private void OnClientInputsRPC(ClientInputState[] inputs)
         {
             #if Server
+            ClientInfo.MarkAsInputSender();
+            
             uint newestInputTick = 0;
             
             foreach (ClientInputState input in inputs)
             {
                 if (input == null) continue;
-                if (_clientInputStates[input.Tick % InputBufferSize].Tick == input.Tick) continue;
+                if (_clientInputStates[input.Tick % InputBufferSize] != null)
+                    if (_clientInputStates[input.Tick % InputBufferSize].Tick == input.Tick) continue;
                 _clientInputStates[input.Tick % InputBufferSize] = input;
 
                 if (newestInputTick < input.Tick)

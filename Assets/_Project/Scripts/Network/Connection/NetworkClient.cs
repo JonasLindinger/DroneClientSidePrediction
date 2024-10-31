@@ -42,6 +42,10 @@ namespace LindoNoxStudio.Network.Connection
             // Referencing
             _tickSyncronisation = GetComponent<TickSyncronisation>();
             _input = GetComponent<ClientInput>();
+            
+            #if Server
+            _input.ClientInfo = _clientInfo;
+            #endif
         }
 
         public override void OnNetworkDespawn()

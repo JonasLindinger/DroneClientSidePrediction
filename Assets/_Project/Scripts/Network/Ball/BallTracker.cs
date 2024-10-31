@@ -22,14 +22,5 @@ namespace _Project.Scripts.Network.Ball
             
             transform.position = ballState.Position;
         }
-
-        public override void ApplyNecessaryThings(IState state)
-        {
-            // Return early if state is not BallState
-            if (!(state is BallState ballState))
-                return;
-            
-            // Todo: Angular Velocity
-        }
     }
 }

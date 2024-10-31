@@ -7,6 +7,5 @@ namespace LindoNoxStudio.Network.Simulation
         void Register();
         IState GetCurrentState();
         void ApplyState(IState state);
-        void ApplyNecessaryThings(IState state);
     }
 }

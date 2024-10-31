@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using LindoNoxStudio.Network.Input;
 using LindoNoxStudio.Network.Simulation;
@@ -56,13 +57,15 @@ namespace LindoNoxStudio.Network.Player
         /// Predicts and saves the local Game State
         /// </summary>
         /// <param name="tick"></param>
-        public void PredictLocalState(uint tick)
+        public ClientInputState PredictLocalState(uint tick)
         {
             // Getting input to process
             ClientInputState input = NetworkClient.LocalClient._input.GetClientInputState(tick);
             
             // Process new input
             _playerController.OnInput(input);
+            
+            return input;
         }
         
         #elif Server
@@ -88,8 +91,6 @@ namespace LindoNoxStudio.Network.Player
         public void OnServerGameStateRPC(GameState gameState)
         {
             #if Client
-            bool localPlayerPredictionWasWrong = true;
-            
             // Apply all Player States
             foreach (var kvp in gameState.States)
             {
@@ -100,16 +101,13 @@ namespace LindoNoxStudio.Network.Player
                 if (!(state is PlayerState playerState))
                     continue;
 
-                if (networkId == NetworkObjectId)
-                    // Apply the state
-                    localPlayerPredictionWasWrong = SnapshotManager.ApplyState(gameState.Tick, networkId, playerState, true);
-                else
-                    // Apply the state
-                    SnapshotManager.ApplyState(gameState.Tick, networkId, playerState, false);
+                SnapshotManager.ApplyState(gameState.Tick, networkId, playerState);
             }
-            
-            for (uint tick = gameState.Tick + 1; tick < SimulationManager.CurrentTick + 1; tick++)
-                SimulationManager.RunPhysicsTick(tick, true, localPlayerPredictionWasWrong);
+
+            SnapshotManager.TakeSnapshot(gameState.Tick); 
+
+            for (uint tick = gameState.Tick + 1; tick <= SimulationManager.CurrentTick; tick++)
+                SimulationManager.RunPhysicsTick(tick, true);
             #endif
         }
     }
