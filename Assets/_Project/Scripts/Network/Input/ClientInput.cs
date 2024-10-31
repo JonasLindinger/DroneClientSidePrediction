@@ -10,6 +10,7 @@ using UnityEngine.InputSystem;
 namespace LindoNoxStudio.Network.Input
 {
     [RequireComponent(typeof(PlayerInput))]
+    [RequireComponent(typeof(TickSyncronisation))]
     public class ClientInput : NetworkBehaviour
     {
         // Count of Ticks we save
@@ -22,6 +23,7 @@ namespace LindoNoxStudio.Network.Input
         private uint _tickWeFirstStartedSavingInputs;
         
         // References
+        private TickSyncronisation _tickSyncronisation;
         private PlayerInput _playerInput;
         
         #elif Server
@@ -40,6 +42,7 @@ namespace LindoNoxStudio.Network.Input
             #if Client
             // Referencing
             _playerInput = GetComponent<PlayerInput>();
+            _tickSyncronisation = GetComponent<TickSyncronisation>();
             #endif
         }
 
@@ -72,7 +75,7 @@ namespace LindoNoxStudio.Network.Input
             
             // Sending the input with some last inputs to the server
             // Todo: Dynamic input array size (currently it's static on 15)
-            OnClientInputsRPC(GetInputsToSend(15));
+            OnClientInputsRPC(GetInputsToSend((int) _tickSyncronisation._wantedBufferSize));
         }
 
         /// <summary>

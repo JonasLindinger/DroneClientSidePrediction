@@ -1,12 +1,13 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace LindoNoxStudio.Network.Simulation
 {
     public class TickSyncronisation : NetworkBehaviour
     {
         // Todo: Make this a setting in the game settings
-        [SerializeField] private WantedBufferSize _wantedBufferSize = WantedBufferSize.Balanced;
+        public WantedBufferSize _wantedBufferSize = WantedBufferSize.Balanced;
         
         #if Client
         // When the Client connects to the Server and we get the Server Tick, we add this ammount ontop of the tick, to get ahead of the Server

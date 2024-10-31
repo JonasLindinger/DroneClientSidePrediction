@@ -156,7 +156,6 @@ namespace LindoNoxStudio.Network.Simulation
         /// <param name="ammount"></param>
         public static void AdjustTick(int ammount)
         {
-            // Todo: When the ticks are too hard apart (>10) then set the tick manually?
             if (ammount < 0)
             {
                 ammount = Mathf.Abs(ammount);
