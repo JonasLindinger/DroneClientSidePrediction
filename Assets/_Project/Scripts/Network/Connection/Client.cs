@@ -8,6 +8,8 @@ namespace LindoNoxStudio.Network.Connection
     {
         // List of all Clients
         public static List<Client> Clients = new List<Client>();
+        // List of Clients, that send input => are valid to receave game States
+        public static List<Client> ClientThatSendInput = new List<Client>();
         
         // Unique name => Name(Uuid)
         public string UniqueName => DisplayName + "(" + Uuid + ")";
@@ -35,6 +37,15 @@ namespace LindoNoxStudio.Network.Connection
             return Clients.Find(c => c.ClientId == clientId);
         }
 
+        /// <summary>
+        /// Adds this client to the input sender list.
+        /// </summary>
+        public void MarkAsInputSender()
+        {
+            if (ClientThatSendInput.Contains(this)) return;
+            ClientThatSendInput.Add(this);
+        }
+        
         /// <summary>
         /// Adds the client to the list
         /// </summary>

@@ -1,8 +1,10 @@
 using System;
+using LindoNoxStudio.Network.Connection;
 using LindoNoxStudio.Network.Player;
 using LindoNoxStudio.Network.Simulation;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Analytics;
 using UnityEngine.InputSystem;
 
 namespace LindoNoxStudio.Network.Input
@@ -11,7 +13,7 @@ namespace LindoNoxStudio.Network.Input
     public class ClientInput : NetworkBehaviour
     {
         // Count of Ticks we save
-        private const int InputBufferSize = 128;
+        private const int InputBufferSize = 1028;
         
         #if Client
         // My Client Inputs
@@ -25,10 +27,13 @@ namespace LindoNoxStudio.Network.Input
         #elif Server
         // Client Inputs
         private ClientInputState[] _clientInputStates = new ClientInputState[InputBufferSize];
+        
+        // The Client of this Object
+        [HideInInspector] public Client ClientInfo;
         #endif
         
         // Calculated Buffer Size
-        [HideInInspector] public int _bufferSize = 3;
+        [HideInInspector] public int _bufferSize = (int) WantedBufferSize.LowLatency;
         
         public override void OnNetworkSpawn()
         {
@@ -86,30 +91,21 @@ namespace LindoNoxStudio.Network.Input
                     return clientInputState;
                 }
             }
-            else
-            {
-                clientInputState = new ClientInputState();                
-            }
             
+            clientInputState = new ClientInputState();
             // We don't have the ClientInputState, so we return the current Input State
-            
-            // Getting Inputs
-            Vector2 cycle;
-            float pedals;
-            float throttle;
-            cycle = _playerInput.actions["Cycle"].ReadValue<Vector2>();
-            pedals = _playerInput.actions["Pedals"].ReadValue<float>();
-            throttle = _playerInput.actions["Throttle"].ReadValue<float>();
-
-            // Setting rotation
             try
             {
-                PlayerController playerController = NetworkPlayer.LocalNetworkPlayer._playerController;
+                Vector2 cycle = _playerInput.actions["Cycle"].ReadValue<Vector2>();
+                float pedals = _playerInput.actions["Pedals"].ReadValue<float>();
+                float throttle = _playerInput.actions["Throttle"].ReadValue<float>();
+                
                 clientInputState.SetUp(tick, cycle, pedals, throttle);
             }
             catch (NullReferenceException e)
             {
-                clientInputState.SetUp(tick, cycle, pedals, throttle);
+                // Using empty ClientInputState
+                clientInputState.SetUp(tick, Vector2.zero, 0, 0);    
             }
 
             return clientInputState;
@@ -159,8 +155,7 @@ namespace LindoNoxStudio.Network.Input
         /// <returns></returns>
         public ClientInputState GetClientInputState(uint tick)
         {
-            ClientInputState clientInputState = new ClientInputState();
-            clientInputState = _clientInputStates[tick % InputBufferSize];
+             ClientInputState clientInputState = _clientInputStates[tick % InputBufferSize];
             
             // If the current input is null, but the last input isn't null, we just repeat the last input and save it as the current input
             if (clientInputState == null && _clientInputStates[(tick - 1) % InputBufferSize] != null)
@@ -171,6 +166,7 @@ namespace LindoNoxStudio.Network.Input
             // If the current input is null, then we just create a new input with the current tick
             else if (clientInputState == null)
             {
+                Debug.Log("Using null input!");
                 clientInputState = new ClientInputState();
                 clientInputState.SetUp(tick, Vector2.zero, 0);
                 _clientInputStates[tick % InputBufferSize] = clientInputState;
@@ -188,11 +184,15 @@ namespace LindoNoxStudio.Network.Input
         private void OnClientInputsRPC(ClientInputState[] inputs)
         {
             #if Server
+            ClientInfo.MarkAsInputSender();
+            
             uint newestInputTick = 0;
             
             foreach (ClientInputState input in inputs)
             {
                 if (input == null) continue;
+                if (_clientInputStates[input.Tick % InputBufferSize] != null)
+                    if (_clientInputStates[input.Tick % InputBufferSize].Tick == input.Tick) continue;
                 _clientInputStates[input.Tick % InputBufferSize] = input;
 
                 if (newestInputTick < input.Tick)

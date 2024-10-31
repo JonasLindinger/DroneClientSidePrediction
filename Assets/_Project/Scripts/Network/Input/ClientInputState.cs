@@ -7,22 +7,17 @@ namespace LindoNoxStudio.Network.Input
     {
         public uint Tick;
         private byte _essentialKeys;
-
-        #if Client
-        // This variable is vor local use. Don't network this.
-        public float Pedals;        
-        #endif
         
         // Decode Throttle
         public float Throttle => (_essentialKeys & (1 << 4)) != 0 ? 1 :
             (_essentialKeys & (1 << 5)) != 0 ? -1 : 0;
-
+        
         #if Client
         public void SetUp(uint tick, Vector2 moveInput, float pedals, float throttle)
         {
             Tick = tick;
-            Pedals = pedals;
-
+            // Todo: Do Pedals
+            
             // Reset the essentialKeys to 0 before setting new values
             _essentialKeys = 0;
 
