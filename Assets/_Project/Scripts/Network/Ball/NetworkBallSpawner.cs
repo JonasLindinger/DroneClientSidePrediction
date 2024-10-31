@@ -1,15 +1,15 @@
 using UnityEngine;
 
-namespace LindoNoxStudio.Network.Connection
+namespace LindoNoxStudio.Network.Ball
 {
-    public class NetworkClientSpawner : MonoBehaviour
+    public class NetworkBallSpawner : MonoBehaviour
     {
-        [Header("Prefabs")]
-        [SerializeField] private NetworkClient _clientPrefab;
+        [Header("References")]
+        [SerializeField] private NetworkBall _networkBall;
         
         #if Server
         // Instance for Singleton reference
-        public static NetworkClientSpawner Instance { get; private set; }
+        public static NetworkBallSpawner Instance { get; private set; }
         
         private void Start()
         {
@@ -34,19 +34,14 @@ namespace LindoNoxStudio.Network.Connection
         }
         
         /// <summary>
-        /// Instantiates a Network Client Prefab
+        /// Instantiates a Network Ball Prefab
         /// </summary>
-        /// <param name="clientId">The Client Id of the Player</param>
-        public void Spawn(ulong clientId)
+        public void Spawn()
         {
             // Instantiate the player object on the server
-            NetworkClient client = Instantiate(_clientPrefab);
-
-            // Spawn the object on the specific client
-            client.NetworkObject.DontDestroyWithOwner = true;
-            client.NetworkObject.SpawnWithObservers = false;
-            client.NetworkObject.SpawnWithOwnership(clientId);
-            client.NetworkObject.NetworkShow(clientId);
+            NetworkBall client = Instantiate(_networkBall);
+            
+            client.NetworkObject.Spawn();
         }
         #endif
     }

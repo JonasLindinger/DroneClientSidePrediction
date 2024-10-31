@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using LindoNoxStudio.Network.Ball;
 using LindoNoxStudio.Network.Connection;
 using LindoNoxStudio.Network.Player;
 using UnityEngine;
@@ -30,6 +31,7 @@ namespace LindoNoxStudio.Network.Game
             
             // Spawning player Objects
             SpawnPlayers();
+            NetworkBallSpawner.Instance.Spawn();
             
             // Logging
             Debug.Log("Game Started");

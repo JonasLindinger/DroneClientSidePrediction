@@ -37,7 +37,7 @@ namespace LindoNoxStudio.Network.Player
         }
         
         /// <summary>
-        /// Instantiates a Netzwork Player Prefab for a client with his ownership
+        /// Instantiates a Network Player Prefab for a client with his ownership
         /// </summary>
         /// <param name="clientId">The Client Id of the Player</param>
         public void Spawn(ulong clientId)

@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace LindoNoxStudio.Network.Player
 {
+    [RequireComponent(typeof(Rigidbody))]
     public class PlayerTracker : NetworkedObject
     {
         private Rigidbody _rb;
