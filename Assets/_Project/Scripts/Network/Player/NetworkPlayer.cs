@@ -91,19 +91,17 @@ namespace LindoNoxStudio.Network.Player
         public void OnServerGameStateRPC(GameState gameState)
         {
             #if Client
-            // Apply all Player States
+            // Apply all States
             foreach (var kvp in gameState.States)
             {
                 ulong networkId = kvp.Key;
                 IState state = kvp.Value;
 
-                // Return early if state is not PlayerState
-                if (!(state is PlayerState playerState))
-                    continue;
-
-                SnapshotManager.ApplyState(gameState.Tick, networkId, playerState);
+                // Applying state
+                SnapshotManager.ApplyState(gameState.Tick, networkId, state);
             }
 
+            // Saving state for optional reconciliation in the future
             SnapshotManager.TakeSnapshot(gameState.Tick); 
 
             for (uint tick = gameState.Tick + 1; tick <= SimulationManager.CurrentTick; tick++)

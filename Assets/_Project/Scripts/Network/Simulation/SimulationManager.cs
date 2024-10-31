@@ -163,9 +163,7 @@ namespace LindoNoxStudio.Network.Simulation
                 PhysicsTickSystem.SkipTick(ammount);
             }
             else
-            {
                 PhysicsTickSystem.CalculateExtraTicks(ammount);
-            }
         }
         
         #endif
