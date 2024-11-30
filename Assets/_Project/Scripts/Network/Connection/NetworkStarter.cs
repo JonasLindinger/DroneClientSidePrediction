@@ -8,7 +8,7 @@ namespace LindoNoxStudio.Network.Connection
 {
     public class NetworkStarter : MonoBehaviour
     {
-        // Todo: Override the Connection data for real use
+        // Make Override the Connection data for real use
         // Connection Data to connect to
         private static ConnectionData _connectionData = new ConnectionData()
         {
@@ -72,7 +72,7 @@ namespace LindoNoxStudio.Network.Connection
                 };
             
             // Creating Connection Data, saving it
-            // Todo: Set clientId to SteamId
+            // Set clientId to SteamId or something like that
             ulong clientId = (ulong) Random.Range(11111, 99999);
             NetworkManager.Singleton.NetworkConfig.ConnectionData = ConnectionPayload.Encode(clientId, "Client " + clientId);
             

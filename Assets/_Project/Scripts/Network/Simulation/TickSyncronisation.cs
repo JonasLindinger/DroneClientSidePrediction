@@ -6,7 +6,7 @@ namespace LindoNoxStudio.Network.Simulation
 {
     public class TickSyncronisation : NetworkBehaviour
     {
-        // Todo: Make this a setting in the game settings
+        // Make this a setting in the game settings
         public WantedBufferSize _wantedBufferSize = WantedBufferSize.Balanced;
         
         #if Client

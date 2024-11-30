@@ -70,11 +70,10 @@ namespace LindoNoxStudio.Network.Input
         /// </summary>
         public void SendInputs()
         {
-            // If we haven't saved any inputs yet, then we don't have anything to send
+            // If we haven't saved any inputs yet, then we don't have anything to send inputs
             if (_tickWeFirstStartedSavingInputs == 0) return;
             
-            // Sending the input with some last inputs to the server
-            // Todo: Dynamic input array size (currently it's static on 15)
+            // Sending the input with some last inputs to the server (Input Ammount is equal to the wantedBufferSize)
             OnClientInputsRPC(GetInputsToSend((int) _tickSyncronisation._wantedBufferSize));
         }
 
