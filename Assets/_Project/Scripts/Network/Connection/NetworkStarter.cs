@@ -8,6 +8,8 @@ namespace LindoNoxStudio.Network.Connection
 {
     public class NetworkStarter : MonoBehaviour
     {
+        // Todo: Add player visual rotation
+        // Todo: Add different Client Side Prediction modes (Predict local, Predict Everything, don't Predict)
         // Make Override the Connection data for real use
         // Connection Data to connect to
         private static ConnectionData _connectionData = new ConnectionData()
