@@ -89,6 +89,3 @@ Assets/
 - Learned through **YouTube tutorials**, **docs**, and **lots of trial and error**
 
 ---
-
-> *“Networking physics is one of the hardest things to get right — but when it works, it feels like magic.”*  
-> — **Jonas Lindinger**
