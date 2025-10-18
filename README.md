@@ -30,6 +30,8 @@ The objective: use physics-based control to push or launch a shared ball into th
 
 ## 🧱 Architecture Overview
 
+--- 
+
 Assets/
 ├── Drones/ # Drone logic, physics, and input prediction
 ├── Ball/ # Networked ball system and reconciliation
@@ -37,6 +39,8 @@ Assets/
 ├── TickSystem/ # Global tick synchronization & state buffers
 ├── SceneManagement/ # Optional scene loader & utilities
 └── Singletons/ # Required singletons for tick + CSP systems
+
+---
 
 
 ---
@@ -76,29 +80,10 @@ Assets/
 
 ---
 
-## 🛠️ Getting Started
-
-1. Clone this repository  
-2. Open in Unity (recommended version: **2022.3+**)  
-3. Launch the **ArenaDemo** scene  
-4. Press **Play** to host or join a match  
-5. Fly your drone, interact with the ball, and test full network prediction in action 🚁⚽  
-
----
-
-## 🔮 Roadmap
-
-- [ ] Implement **boost system** and drone customization  
-- [ ] Add **spectator camera** and replay mode  
-- [ ] Introduce **tick rollback** for the ball (Level 5 CSP)  
-- [ ] Create a **public multiplayer demo build**  
-- [ ] Add **mobile controller support** (optional)  
-
 ---
 
 ## 🧾 Credits
 
-- Built with ❤️ by **Jonas Lindinger**  
 - Inspired by **Rocket League’s Netcode** and **GDC Vault networking talks**  
 - Powered by **Unity Netcode for GameObjects (NGO)**  
 - Learned through **YouTube tutorials**, **docs**, and **lots of trial and error**
