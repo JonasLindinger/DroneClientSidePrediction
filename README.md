@@ -1,4 +1,4 @@
-> ⚠️ **AI-GENERATED README** — created with assistance from ChatGPT (GPT-5)
+> 🤖 **AI-Generated README**
 
 # 🚀 Drone League – Networked Physics & Prediction System
 
