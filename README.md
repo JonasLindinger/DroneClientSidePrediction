@@ -28,21 +28,6 @@ The objective: use physics-based control to push or launch a shared ball into th
 
 ---
 
-## 🧱 Architecture Overview
-
---- 
-
-Assets/
-├── Drones/ # Drone logic, physics, and input prediction
-├── Ball/ # Networked ball system and reconciliation
-├── Netcode/ # Core multiplayer logic (Unity Netcode for GameObjects)
-├── TickSystem/ # Global tick synchronization & state buffers
-├── SceneManagement/ # Optional scene loader & utilities
-└── Singletons/ # Required singletons for tick + CSP systems
-
----
-
-
 ---
 
 ## 🔧 Technical Details
